@@ -101,14 +101,14 @@ CREATE INDEX IF NOT EXISTS idx_trips_invite_code              ON trips(invite_co
 -- -----------------------------------------------------
 -- 초기 데모용 데이터 적재 (초기 로딩 시 에러 방지)
 -- -----------------------------------------------------
-INSERT INTO users (id, email, nickname, profile_image, provider, oauth_id)
-VALUES (1, 'test@wandermap.io', '테스터', '', 'LOCAL', 'mock-oauth-id')
+INSERT INTO users (id, email, nickname, profile_image, provider, oauth_id, created_at)
+VALUES (1, 'test@wandermap.io', 'Tester', '', 'LOCAL', 'mock-oauth-id', NOW())
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO trips (id, invite_code, title, destination, start_date, end_date, status, created_by)
-VALUES (999, 'demo-invite-code-1', '제주도 동쪽 2박 3일 힐링 코스 🌴', '제주특별자치도', '2026-08-15', '2026-08-18', 'PLANNING', 1)
+INSERT INTO trips (id, invite_code, title, destination, start_date, end_date, status, created_by, created_at)
+VALUES (999, 'demo-invite-code-1', 'Jeju East Coast Tour 🌴', 'Jeju', '2026-08-15', '2026-08-18', 'PLANNING', 1, NOW())
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO trip_members (id, trip_id, user_id, role)
-VALUES (999, 999, 1, 'OWNER')
+INSERT INTO trip_members (id, trip_id, user_id, role, joined_at)
+VALUES (999, 999, 1, 'OWNER', NOW())
 ON CONFLICT (id) DO NOTHING;
