@@ -1,0 +1,30 @@
+# dependencies
+**/node_modules/
+node_modules/
+
+# Next.js build
+**/.next/
+.next/
+**/out/
+
+# Spring Boot build
+**/build/
+build/
+**/.gradle/
+.gradle/
+**/bin/
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE & Configs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+WanderMap.code-workspace

@@ -1,0 +1,2130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WanderMap — 프로젝트 문서 v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f8f6;
+  --surface:#ffffff;
+  --sidebar-bg:#f0f0ec;
+  --border:#e2e2da;
+  --text:#18181b;
+  --muted:#6b6b72;
+  --accent:#1a9e7a;
+  --accent-light:#edfaf4;
+  --blue:#2c7be5;
+  --blue-light:#edf3ff;
+  --purple:#6d44d4;
+  --purple-light:#f3efff;
+  --amber:#c07000;
+  --amber-light:#fff8e6;
+  --red:#d43232;
+  --coral:#c85030;
+  --sidebar-w:272px;
+  --content-max:1000px;
+  --radius:10px;
+  --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth;font-size:17px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.75;display:flex;min-height:100vh}
+
+/* SIDEBAR */
+#sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background:var(--sidebar-bg);
+  border-right:1px solid var(--border);
+  position:fixed;top:0;left:0;height:100vh;
+  overflow-y:auto;padding:0 0 2rem;
+  display:flex;flex-direction:column;
+  z-index:100;
+}
+.sidebar-logo{
+  padding:1.4rem 1.4rem 1.1rem;
+  border-bottom:1px solid var(--border);
+  margin-bottom:.5rem;
+}
+.sidebar-logo .logo-name{font-size:1.1rem;font-weight:600;color:var(--text);letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.sidebar-logo .logo-pin{width:24px;height:24px;background:var(--accent);border-radius:50% 50% 50% 0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.sidebar-logo sub{font-size:.75rem;color:var(--muted);font-weight:400;display:block;margin-top:4px}
+.nav-chapter{margin-bottom:.3rem}
+.nav-chapter-label{
+  display:flex;align-items:center;gap:7px;
+  padding:.55rem 1.4rem .3rem;
+  font-size:.72rem;font-weight:600;letter-spacing:.07em;
+  color:var(--muted);text-transform:uppercase;
+}
+.ch-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.nav-link{
+  display:block;padding:.32rem 1.4rem .32rem 2.1rem;
+  font-size:.85rem;color:var(--muted);
+  text-decoration:none;
+  transition:color .15s,background .15s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nav-link:hover{color:var(--text);background:rgba(0,0,0,.04)}
+.nav-link.active{color:var(--accent);font-weight:500}
+
+/* MAIN */
+#main{margin-left:var(--sidebar-w);flex:1;padding:0 2.5rem 8rem}
+.chapter{max-width:var(--content-max);margin:0 auto;padding-top:3.5rem}
+
+/* chapter headers */
+.chapter-header{
+  display:flex;align-items:center;gap:16px;
+  padding:1.75rem 2rem;
+  border-radius:var(--radius);
+  margin-bottom:2.5rem;
+  border:1px solid transparent;
+}
+.chapter-header h1{font-size:1.5rem;font-weight:600;letter-spacing:-.4px}
+.chapter-header p{font-size:.92rem;margin-top:4px;opacity:.75}
+.ch-icon{font-size:1.8rem;flex-shrink:0}
+.ch-0{background:linear-gradient(135deg,#f0f7ff 0%,#e8f4fd 100%);color:#1a5fa0;border-color:#c0d9f0}
+.ch-1{background:var(--accent-light);color:var(--accent);border-color:#b8eedf}
+.ch-2{background:var(--blue-light);color:var(--blue);border-color:#c0d4f8}
+.ch-3{background:var(--purple-light);color:var(--purple);border-color:#cfc0f4}
+.ch-4{background:var(--amber-light);color:var(--amber);border-color:#f0d88c}
+
+/* sections */
+.section{margin-bottom:2.75rem}
+h2.sh{
+  font-size:1.15rem;font-weight:600;
+  margin-bottom:1.1rem;padding-bottom:.6rem;
+  border-bottom:1.5px solid var(--border);
+  color:var(--text);letter-spacing:-.25px;
+}
+h3.sh3{font-size:1rem;font-weight:600;margin:1.4rem 0 .7rem;color:var(--text)}
+h4.sh4{font-size:.92rem;font-weight:600;margin:.9rem 0 .45rem;color:var(--muted)}
+p{margin-bottom:.8rem;font-size:.95rem;color:#3a3a40;line-height:1.75}
+
+/* badges */
+.badge{
+  display:inline-flex;align-items:center;
+  font-size:.76rem;font-weight:500;
+  padding:3px 9px;border-radius:5px;
+  margin:.15rem .2rem .15rem 0;
+}
+.badge-green{background:#d4f7e4;color:#0f5c30}
+.badge-blue{background:#dce8ff;color:#1a3f9a}
+.badge-purple{background:#ece5ff;color:#4a1f9a}
+.badge-amber{background:#fff0cc;color:#7a4800}
+.badge-red{background:#ffe0e0;color:#8a1010}
+.badge-gray{background:#f0f0ec;color:#444450}
+.badge-teal{background:#d4f4f0;color:#0a5c52}
+
+/* callouts */
+.callout{
+  border-left:3.5px solid;padding:.85rem 1.1rem;
+  border-radius:0 var(--radius) var(--radius) 0;
+  margin:.8rem 0;font-size:.92rem;line-height:1.7;
+}
+.callout-green{border-color:var(--accent);background:var(--accent-light);color:#065a38}
+.callout-blue{border-color:var(--blue);background:var(--blue-light);color:#1a3478}
+.callout-amber{border-color:var(--amber);background:var(--amber-light);color:#6a3400}
+.callout-gray{border-color:#a0a0a8;background:#f4f4f0;color:#3a3a40}
+.callout-purple{border-color:var(--purple);background:var(--purple-light);color:#3a1a8a}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;margin:.6rem 0 1.2rem;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{background:#eeeeea;font-weight:600;padding:.65rem .9rem;text-align:left;color:var(--muted);font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+td{padding:.58rem .9rem;border-top:1px solid var(--border);color:#38383f;vertical-align:top}
+tr:hover td{background:#fafaf8}
+td code,th code{font-family:var(--mono);font-size:.8rem;background:#f0f0ec;padding:2px 5px;border-radius:4px;color:#484852}
+
+/* code */
+pre{border-radius:var(--radius);margin:.6rem 0 1.2rem;font-size:.82rem;line-height:1.65;overflow-x:auto}
+pre code{font-family:var(--mono)!important;font-size:.82rem!important}
+code:not(pre code){
+  font-family:var(--mono);font-size:.86rem;
+  background:#f0f0ec;color:#484852;
+  padding:2px 6px;border-radius:5px;
+}
+
+/* feature cards */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.85rem;margin:.6rem 0 1.2rem}
+.feat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem 1.15rem;
+  transition:box-shadow .2s;
+}
+.feat-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.feat-card .feat-id{font-size:.74rem;font-weight:600;color:var(--accent);margin-bottom:.3rem;letter-spacing:.05em}
+.feat-card h4{font-size:.95rem;font-weight:600;margin-bottom:.35rem}
+.feat-card p{font-size:.85rem;color:var(--muted);margin:0;line-height:1.55}
+
+/* flow diagram */
+.flow-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.9rem 1.2rem;
+  margin:.35rem 0;
+}
+.flow-step{
+  display:flex;gap:.85rem;align-items:flex-start;
+  padding:.55rem 0;border-bottom:1px dashed var(--border);
+}
+.flow-step:last-child{border-bottom:none}
+.flow-num{
+  min-width:24px;height:24px;border-radius:50%;
+  background:var(--accent);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.73rem;font-weight:700;flex-shrink:0;margin-top:2px;
+}
+.flow-num.blue{background:var(--blue)}
+.flow-num.purple{background:var(--purple)}
+.flow-content{flex:1}
+.flow-title{font-weight:600;font-size:.9rem;margin-bottom:.18rem}
+.flow-sub{font-size:.82rem;color:var(--muted);line-height:1.55}
+
+/* stack grid */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:.55rem;margin:.55rem 0 1.2rem}
+.stack-row{
+  display:flex;gap:.85rem;align-items:flex-start;
+  padding:.58rem .85rem;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--radius);
+}
+.stack-label{font-size:.76rem;color:var(--muted);min-width:115px;padding-top:2px;font-weight:600;letter-spacing:.02em}
+.stack-val{font-size:.88rem;color:var(--text);flex:1}
+.stack-val small{display:block;font-size:.78rem;color:var(--muted);margin-top:2px}
+.stack-val .version-badge{display:inline-block;font-size:.7rem;padding:1px 7px;border-radius:4px;margin-left:6px;font-weight:600}
+.vb-new{background:#d4f4e0;color:#0a5a2a}
+.vb-stable{background:#dce8ff;color:#1a3f9a}
+
+/* mvp checklist */
+.mvp-list{list-style:none;margin:.55rem 0 1.2rem}
+.mvp-list li{
+  display:flex;gap:.85rem;align-items:flex-start;
+  padding:.55rem 0;border-bottom:1px solid var(--border);
+  font-size:.92rem;
+}
+.mvp-list li:last-child{border-bottom:none}
+.mvp-check{color:var(--accent);font-size:.95rem;flex-shrink:0;margin-top:2px}
+
+/* method badges */
+.method{
+  font-size:.74rem;font-weight:700;font-family:var(--mono);
+  padding:2px 7px;border-radius:4px;white-space:nowrap;
+}
+.m-get{background:#d4f7e4;color:#0a5030}
+.m-post{background:#dce8ff;color:#1a3f9a}
+.m-put{background:#fff0cc;color:#7a4800}
+.m-delete{background:#ffe0e0;color:#8a1010}
+.m-ws{background:#ece5ff;color:#4a1f9a}
+
+/* chapter divider */
+.chapter-divider{height:1px;background:var(--border);max-width:var(--content-max);margin:0 auto}
+
+/* addon cards */
+.addon-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.15rem 1.4rem;
+  margin-bottom:1.1rem;
+}
+.addon-card h3{font-size:1rem;font-weight:600;margin-bottom:.45rem;display:flex;align-items:center;gap:.55rem}
+.addon-card .addon-num{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--amber-light);color:var(--amber);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.74rem;font-weight:700;flex-shrink:0;
+}
+.addon-card p{font-size:.88rem;color:#3a3a40;margin-bottom:.55rem}
+.addon-point{
+  font-size:.82rem;background:#fffbee;color:#7a4200;
+  border-left:3px solid var(--amber);padding:.45rem .8rem;
+  border-radius:0 5px 5px 0;margin-top:.55rem;
+}
+
+/* WS paths */
+.ws-block{
+  background:#0f172a;border-radius:var(--radius);
+  padding:.9rem 1.1rem;margin:.55rem 0 1.2rem;
+  font-family:var(--mono);font-size:.8rem;line-height:1.9;
+  color:#94a3b8;
+}
+.ws-comment{color:#475569}
+.ws-path{color:#7dd3fc}
+.ws-arrow{color:#4ade80}
+.ws-label{color:#e2e8f0}
+
+/* scrollbar */
+#sidebar::-webkit-scrollbar{width:4px}
+#sidebar::-webkit-scrollbar-track{background:transparent}
+#sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ─── VISUAL COMPONENTS ─── */
+
+/* Architecture diagram */
+.arch-diagram{display:flex;flex-direction:column;gap:0;margin:.6rem 0 1.4rem}
+.arch-layer{
+  border:1.5px solid var(--border);border-radius:var(--radius);
+  padding:1rem 1.25rem;background:var(--surface);
+  position:relative;
+}
+.arch-layer-label{
+  font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  padding:2px 9px;border-radius:4px;margin-bottom:.7rem;
+  display:inline-block;
+}
+.arch-layer-client .arch-layer-label{background:#dce8ff;color:#1a3f9a}
+.arch-layer-server .arch-layer-label{background:#d4f4e0;color:#0a5a2a}
+.arch-layer-infra .arch-layer-label{background:#ece5ff;color:#4a1f9a}
+.arch-boxes{display:flex;gap:.6rem;flex-wrap:wrap}
+.arch-box{
+  padding:.5rem .85rem;border-radius:7px;
+  font-size:.82rem;font-weight:500;border:1px solid;
+}
+.arch-box-blue{background:#edf3ff;color:#1a3f9a;border-color:#b8cfff}
+.arch-box-green{background:#ecfaf4;color:#0f5a30;border-color:#a0ddc4}
+.arch-box-purple{background:#f3efff;color:#4a1f9a;border-color:#c8b8ff}
+.arch-box-gray{background:#f0f0ec;color:#3a3a40;border-color:#d0d0c8}
+.arch-box-amber{background:#fff8e6;color:#7a4800;border-color:#e8c870}
+.arch-arrow-down{
+  display:flex;align-items:center;justify-content:center;
+  gap:2rem;padding:.4rem 0;
+}
+.arch-arrow-down span{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:.72rem;color:var(--muted);
+}
+.arch-arrow-down span::after{content:'↓';font-size:1.1rem;color:var(--border)}
+
+/* ERD visual */
+.erd-diagram{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.6rem;margin:.6rem 0 1.2rem}
+.erd-table{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.erd-table-header{
+  padding:.5rem .85rem;font-size:.8rem;font-weight:600;
+  display:flex;align-items:center;gap:7px;
+}
+.erd-table-body{padding:.4rem 0}
+.erd-col{
+  display:flex;align-items:center;gap:7px;
+  padding:.22rem .85rem;font-size:.76rem;
+}
+.erd-col-name{color:var(--text);font-family:var(--mono)}
+.erd-col-type{color:var(--muted);font-size:.7rem}
+.erd-pk{font-size:.64rem;font-weight:700;padding:1px 5px;border-radius:3px;background:#d4f7e4;color:#0a5030;flex-shrink:0}
+.erd-fk{font-size:.64rem;font-weight:700;padding:1px 5px;border-radius:3px;background:#dce8ff;color:#1a3f9a;flex-shrink:0}
+
+/* Sequence diagram visual */
+.seq-diagram{
+  background:#0f172a;border-radius:var(--radius);
+  padding:1.2rem;margin:.6rem 0 1.2rem;
+  overflow-x:auto;
+}
+.seq-actors{display:flex;gap:0;margin-bottom:1rem}
+.seq-actor{
+  flex:1;text-align:center;
+  font-size:.74rem;font-weight:600;color:#e2e8f0;
+  padding:.4rem .5rem;
+  background:#1e293b;border-radius:6px;
+  margin:0 4px;
+}
+.seq-rows{display:flex;flex-direction:column;gap:.3rem}
+.seq-row{display:flex;align-items:center;min-height:26px}
+.seq-cell{flex:1;position:relative;display:flex;align-items:center;justify-content:center}
+.seq-line{position:absolute;top:50%;left:0;right:0;height:1px;background:#334155}
+.seq-arrow-r{
+  position:absolute;top:50%;left:10%;right:10%;
+  height:1px;background:#4ade80;
+}
+.seq-arrow-r::after{content:'';position:absolute;right:0;top:-3px;border:4px solid transparent;border-left:6px solid #4ade80}
+.seq-arrow-l{
+  position:absolute;top:50%;left:10%;right:10%;
+  height:1px;background:#7dd3fc;
+}
+.seq-arrow-l::before{content:'';position:absolute;left:0;top:-3px;border:4px solid transparent;border-right:6px solid #7dd3fc}
+.seq-label{
+  position:absolute;top:50%;transform:translateY(-130%);
+  font-size:.68rem;color:#94a3b8;white-space:nowrap;
+  background:#0f172a;padding:0 4px;
+}
+
+/* Wireframe screens */
+.wf-section{margin:.6rem 0 2rem}
+.wf-label{font-size:.76rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem}
+.wf-screen{
+  background:#ffffff;border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  box-shadow:0 2px 16px rgba(0,0,0,.06);
+}
+/* Wireframe nav */
+.wf-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  background:#fff;
+}
+.wf-nav-logo{font-size:14px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:7px}
+.wf-logo-pin{width:22px;height:22px;background:#1a9e7a;border-radius:50% 50% 50% 0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+.wf-trip-badge{font-size:11px;padding:3px 10px;background:#f0f0ec;border:1px solid var(--border);border-radius:20px;color:#444;margin-left:8px}
+.wf-avatars{display:flex;gap:-4px}
+.wf-avatar{width:26px;height:26px;border-radius:50%;border:2px solid #fff;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:600;margin-left:-6px}
+.wf-av1{background:#e0f0ff;color:#1a5fa0}
+.wf-av2{background:#fff0e0;color:#a05010}
+.wf-av3{background:#f0e0ff;color:#6030a0}
+.wf-invite-btn{font-size:11px;padding:5px 12px;background:#1a9e7a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:500}
+
+/* Map+panel layout */
+.wf-main{display:grid;grid-template-columns:1fr 320px;min-height:440px}
+.wf-map{
+  background:#e8e8e0;position:relative;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.wf-map-bg{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(90deg, transparent 49.5%, #d0d0c8 49.5%, #d0d0c8 50.5%, transparent 50.5%),
+    linear-gradient(0deg, transparent 49.5%, #d0d0c8 49.5%, #d0d0c8 50.5%, transparent 50.5%);
+  background-size:80px 80px;
+  opacity:.4;
+}
+.wf-map-road-h{position:absolute;top:42%;left:0;right:0;height:18px;background:#c8c8be;opacity:.7}
+.wf-map-road-v{position:absolute;left:28%;top:0;bottom:0;width:14px;background:#c8c8be;opacity:.7}
+.wf-map-river{position:absolute;top:52%;left:0;right:0;height:22px;background:#a0c4d8;opacity:.75}
+.wf-map-badge{
+  position:absolute;top:12px;left:12px;
+  font-size:11px;padding:5px 10px;background:rgba(255,255,255,.95);
+  border:1px solid var(--border);border-radius:6px;font-weight:500;
+  display:flex;align-items:center;gap:5px;
+}
+.wf-map-badge span{width:10px;height:10px;background:#2c7be5;border-radius:2px}
+.wf-pin{
+  position:absolute;width:26px;height:26px;border-radius:50%;
+  border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+.wf-pin-tooltip{
+  position:absolute;background:rgba(255,255,255,.96);border:1px solid var(--border);
+  border-radius:6px;padding:4px 9px;font-size:11px;font-weight:500;
+  white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.12);
+}
+.wf-map-btns{
+  position:absolute;bottom:14px;left:14px;
+  display:flex;gap:8px;
+}
+.wf-map-btn{
+  padding:8px 14px;background:#fff;border:1px solid var(--border);
+  border-radius:8px;font-size:12px;font-weight:500;
+  display:flex;align-items:center;gap:5px;
+  box-shadow:0 1px 4px rgba(0,0,0,.1);cursor:pointer;
+}
+.wf-map-btn.icon-only{padding:8px 10px}
+
+/* Right panel */
+.wf-panel{
+  border-left:1px solid var(--border);
+  background:#fafafa;display:flex;flex-direction:column;
+}
+.wf-panel-header{
+  padding:12px 16px 10px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.wf-panel-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.wf-live-dot{width:8px;height:8px;border-radius:50%;background:#d43232}
+.wf-emergency-btn{font-size:11px;padding:4px 10px;background:#fff8e6;border:1px solid #f0d888;color:#a06000;border-radius:6px;cursor:pointer}
+.wf-panel-body{flex:1;padding:12px 14px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.wf-day-badge{font-size:11px;padding:4px 10px;background:#f0f0ec;border:1px solid var(--border);border-radius:20px;color:#444;display:inline-block;margin-bottom:2px}
+.wf-place-card{
+  background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+}
+.wf-place-card.voting{border-color:#c8d8f0;background:#f4f8ff}
+.wf-place-cat{font-size:10px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between}
+.wf-place-name{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+.wf-place-addr{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px}
+.wf-confirmed-badge{font-size:10px;padding:2px 8px;background:#d4f4e0;color:#0a5a30;border-radius:4px}
+.wf-voting-badge{font-size:10px;padding:2px 8px;background:#fff0cc;color:#7a4800;border-radius:4px}
+.wf-vote-row{display:flex;gap:8px;margin-top:8px}
+.wf-vote-btn{
+  flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);
+  background:#fff;cursor:pointer;text-align:center;
+  font-size:13px;display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.wf-vote-btn.up{border-color:#a8d8b0;background:#f0faf4}
+.wf-vote-btn.down{border-color:#d8a8a8;background:#faf0f0}
+.wf-vote-meta{font-size:10px;color:var(--muted);text-align:center;margin-top:5px}
+.wf-panel-chat{
+  border-top:1px solid var(--border);padding:10px 14px;
+}
+.wf-chat-input{
+  width:100%;padding:9px 14px;font-size:12px;
+  border:1px solid var(--border);border-radius:20px;
+  color:var(--muted);background:#fff;
+}
+
+/* 3-screen wireframe */
+.wf-3screens{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;gap:0;align-items:start;margin:.6rem 0 1.4rem}
+.wf-arrow-mid{display:flex;align-items:center;justify-content:center;padding-top:2.5rem;color:var(--border);font-size:1.5rem}
+
+/* form wireframe */
+.wf-form-body{padding:14px}
+.wf-form-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.04em}
+.wf-input{width:100%;padding:9px 12px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:#fff;margin-bottom:10px;color:#333}
+.wf-select{width:100%;padding:9px 12px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:#fff;margin-bottom:10px;color:#333}
+.wf-tag-group{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.wf-tag{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);cursor:pointer;background:#fff;color:#555}
+.wf-tag.sel{background:#ecfaf4;border-color:#8ad4b8;color:#0a5a38;font-weight:500}
+.wf-submit-btn{width:100%;padding:11px;background:#1a9e7a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+
+/* roadmap */
+.roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:.6rem 0 1.2rem}
+.roadmap-phase{border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.roadmap-header{padding:.6rem .9rem;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:7px}
+.roadmap-header.ph1{background:#ecfaf4;color:#0a5a38}
+.roadmap-header.ph2{background:#edf3ff;color:#1a3f9a}
+.roadmap-header.ph3{background:#f3efff;color:#4a1f9a}
+.roadmap-body{padding:.5rem .9rem}
+.roadmap-item{font-size:.82rem;padding:.3rem 0;border-bottom:1px dashed var(--border);color:#3a3a40;display:flex;align-items:center;gap:.5rem}
+.roadmap-item:last-child{border-bottom:none}
+.roadmap-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* appeal points */
+.appeal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.7rem;margin:.6rem 0 1.2rem}
+.appeal-card{
+  border:1px solid var(--border);border-radius:var(--radius);padding:.9rem 1.1rem;
+  background:var(--surface);
+}
+.appeal-card .ap-num{font-size:.7rem;font-weight:700;color:var(--accent);margin-bottom:.3rem}
+.appeal-card h4{font-size:.92rem;font-weight:600;margin-bottom:.3rem}
+.appeal-card p{font-size:.82rem;color:var(--muted);margin:0;line-height:1.55}
+
+@media(max-width:900px){
+  #sidebar{display:none}
+  #main{margin-left:0;padding:0 1.2rem 5rem}
+  .wf-main{grid-template-columns:1fr}
+  .wf-panel{border-left:none;border-top:1px solid var(--border)}
+  .wf-3screens{grid-template-columns:1fr}
+  .wf-arrow-mid{display:none}
+  .roadmap{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-name"><div class="logo-pin">W</div> WanderMap</div>
+    <sub>프로젝트 기획 &amp; 설계 문서 v2.0</sub>
+  </div>
+
+  <div class="nav-chapter">
+    <div class="nav-chapter-label"><span class="ch-dot" style="background:#2c7be5"></span>화면 설계</div>
+    <a class="nav-link" href="#wireframe-main">메인 화면 미리보기</a>
+    <a class="nav-link" href="#wireframe-flow">3화면 플로우</a>
+  </div>
+
+  <div class="nav-chapter">
+    <div class="nav-chapter-label"><span class="ch-dot" style="background:#1a9e7a"></span>기획서</div>
+    <a class="nav-link" href="#intro">서론 &amp; 개요</a>
+    <a class="nav-link" href="#core-features">핵심 기능</a>
+    <a class="nav-link" href="#feature-spec">기능 명세서</a>
+    <a class="nav-link" href="#user-flow">유저 플로우</a>
+    <a class="nav-link" href="#architecture">시스템 구성도</a>
+    <a class="nav-link" href="#tech-stack">기술 스택</a>
+    <a class="nav-link" href="#erd">ERD</a>
+    <a class="nav-link" href="#mvp">결론 &amp; MVP</a>
+  </div>
+
+  <div class="nav-chapter">
+    <div class="nav-chapter-label"><span class="ch-dot" style="background:#2c7be5"></span>백엔드 설계</div>
+    <a class="nav-link" href="#be-flow">핵심 유저 플로우</a>
+    <a class="nav-link" href="#be-erd">ERD SQL</a>
+    <a class="nav-link" href="#sequence">시퀀스 다이어그램</a>
+    <a class="nav-link" href="#fallback">Fallback 정책</a>
+    <a class="nav-link" href="#rest-ws">REST vs WebSocket</a>
+    <a class="nav-link" href="#pkg">패키지 구조</a>
+  </div>
+
+  <div class="nav-chapter">
+    <div class="nav-chapter-label"><span class="ch-dot" style="background:#6d44d4"></span>프론트엔드 설계</div>
+    <a class="nav-link" href="#state">상태 관리</a>
+    <a class="nav-link" href="#routing">라우팅 &amp; 컴포넌트</a>
+    <a class="nav-link" href="#ws-hook">WebSocket 훅</a>
+    <a class="nav-link" href="#ws-reconnect">재연결 정책</a>
+    <a class="nav-link" href="#naver-maps">Naver Maps 추상화</a>
+    <a class="nav-link" href="#render-opt">렌더링 최적화</a>
+    <a class="nav-link" href="#axios">Axios 인터셉터</a>
+    <a class="nav-link" href="#folder">폴더 구조</a>
+  </div>
+
+  <div class="nav-chapter">
+    <div class="nav-chapter-label"><span class="ch-dot" style="background:#c07000"></span>추가 기능</div>
+    <a class="nav-link" href="#addon1">장소 스크랩</a>
+    <a class="nav-link" href="#addon2">여행 후기 공유</a>
+    <a class="nav-link" href="#addon3">날씨 재조정</a>
+    <a class="nav-link" href="#addon4">예산 고도화</a>
+    <a class="nav-link" href="#addon5">역할 분담</a>
+    <a class="nav-link" href="#addon6">AI 긴급 우회</a>
+    <a class="nav-link" href="#addon7">템플릿 재사용</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main id="main">
+
+<!-- ═══════════ CHAPTER 0: 화면 설계 (와이어프레임) ═══════════ -->
+<div class="chapter">
+  <div class="chapter-header ch-0">
+    <div class="ch-icon">🖥️</div>
+    <div>
+      <h1>화면 설계 — 와이어프레임</h1>
+      <p>메인 UI 미리보기 · 3화면 유저 플로우</p>
+    </div>
+  </div>
+
+  <!-- 메인 화면 -->
+  <div class="section" id="wireframe-main">
+    <h2 class="sh">메인 화면 미리보기 — 실시간 동선 조율</h2>
+    <p>방에 입장한 뒤 보이는 핵심 화면입니다. 왼쪽 지도에는 네이버 지도 기반 번호 핀이 표시되고, 오른쪽 패널에서 멤버들이 실시간으로 장소 투표를 진행합니다.</p>
+
+    <div class="wf-section">
+      <div class="wf-screen">
+        <!-- Navbar -->
+        <div class="wf-nav">
+          <div style="display:flex;align-items:center;gap:0">
+            <div class="wf-nav-logo">
+              <div class="wf-logo-pin">W</div>
+              WanderMap
+            </div>
+            <span class="wf-trip-badge">🗾 도쿄 식도락 여행 ✈</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="display:flex;margin-left:6px">
+              <div class="wf-avatar wf-av1" style="margin-left:0">M</div>
+              <div class="wf-avatar wf-av2">Y</div>
+              <div class="wf-avatar wf-av3">K</div>
+            </div>
+            <button class="wf-invite-btn">+ 초대 링크 복사</button>
+          </div>
+        </div>
+
+        <!-- Map + Panel -->
+        <div class="wf-main">
+          <!-- Map -->
+          <div class="wf-map">
+            <div class="wf-map-bg"></div>
+            <div class="wf-map-road-h"></div>
+            <div class="wf-map-road-v"></div>
+            <div class="wf-map-river"></div>
+            <div class="wf-map-badge"><span></span> Naver Maps API 렌더링 영역</div>
+            <!-- Pins -->
+            <div class="wf-pin" style="background:#1a5fa0;top:26%;left:22%">1</div>
+            <div class="wf-pin" style="background:#1a9e7a;top:48%;left:42%">
+              ?
+              <div class="wf-pin-tooltip" style="bottom:130%;left:50%;transform:translateX(-50%)">투표중: 푸글렌 도쿄</div>
+            </div>
+            <div class="wf-pin" style="background:#6d44d4;top:32%;left:64%">3</div>
+            <!-- Map buttons -->
+            <div class="wf-map-btns">
+              <button class="wf-map-btn icon-only">🏠</button>
+              <button class="wf-map-btn">⚡ 도보 최적화 셔플</button>
+            </div>
+          </div>
+
+          <!-- Right Panel -->
+          <div class="wf-panel">
+            <div class="wf-panel-header">
+              <div class="wf-panel-title">
+                <div class="wf-live-dot"></div>
+                실시간 동선 조율
+              </div>
+              <button class="wf-emergency-btn">△ AI 긴급 우회</button>
+            </div>
+
+            <div class="wf-panel-body">
+              <span class="wf-day-badge">1일차 · 10월 24일</span>
+
+              <!-- 확정된 장소 -->
+              <div class="wf-place-card">
+                <div class="wf-place-cat">
+                  일식당
+                  <span class="wf-confirmed-badge">확정됨</span>
+                </div>
+                <div class="wf-place-name">츠지한 (실데이터)</div>
+                <div class="wf-place-addr">◎ 도쿄도 주오구 니혼바시 3-1-15</div>
+              </div>
+
+              <!-- 투표 중인 장소 -->
+              <div class="wf-place-card voting">
+                <div class="wf-place-cat">
+                  카페/디저트
+                  <span class="wf-voting-badge">● 투표 진행 중</span>
+                </div>
+                <div class="wf-place-name">푸글렌 도쿄</div>
+                <div class="wf-place-addr">◎ 시부야구 토미가야 1-16-11</div>
+                <div class="wf-vote-row">
+                  <button class="wf-vote-btn up">👍 <span style="font-size:12px;font-weight:600">2</span></button>
+                  <button class="wf-vote-btn down">👎 <span style="font-size:12px;font-weight:600">0</span></button>
+                </div>
+                <div class="wf-vote-meta">과반수(2/3) 찬성 시 동선 확정</div>
+              </div>
+
+              <!-- AI 생성 대기 중 placeholder -->
+              <div style="border:1px dashed #c0c0bc;border-radius:8px;padding:12px;text-align:center;color:var(--muted);font-size:12px">
+                💡 AI가 다음 장소 후보를 생성 중...
+              </div>
+            </div>
+
+            <div class="wf-panel-chat">
+              <input class="wf-chat-input" placeholder="💬 채팅 또는 다음 장소 검색..." type="text" readonly>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3화면 플로우 -->
+  <div class="section" id="wireframe-flow">
+    <h2 class="sh">3화면 유저 플로우</h2>
+    <p>방장이 방을 생성하고 멤버들이 합류하는 시점부터 최종 동선이 확정되기까지의 핵심 3화면입니다.</p>
+
+    <div class="wf-3screens">
+
+      <!-- Screen 1: 방 생성 -->
+      <div>
+        <div class="wf-label">① 여행 방 생성</div>
+        <div class="wf-screen">
+          <div class="wf-nav" style="padding:8px 14px">
+            <div class="wf-nav-logo"><div class="wf-logo-pin">W</div> WanderMap</div>
+            <button class="wf-invite-btn" style="background:transparent;color:var(--muted);border:1px solid var(--border)">로그인</button>
+          </div>
+          <div class="wf-form-body">
+            <p style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:12px">새 여행 방 만들기</p>
+
+            <label class="wf-form-label">여행 이름</label>
+            <input class="wf-input" value="도쿄 식도락 여행 ✈" readonly>
+
+            <label class="wf-form-label">목적지</label>
+            <select class="wf-select">
+              <option>서울특별시</option>
+              <option>부산광역시</option>
+              <option selected>해외 — 일본/도쿄</option>
+            </select>
+
+            <label class="wf-form-label">여행 기간</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+              <input class="wf-input" value="2026.10.24" readonly style="margin:0">
+              <input class="wf-input" value="2026.10.27" readonly style="margin:0">
+            </div>
+
+            <label class="wf-form-label">인원</label>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <button style="width:30px;height:30px;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:16px;cursor:pointer">−</button>
+              <span style="font-size:16px;font-weight:600">3</span>
+              <button style="width:30px;height:30px;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:16px;cursor:pointer">+</button>
+              <span style="font-size:12px;color:var(--muted)">명</span>
+            </div>
+
+            <button class="wf-submit-btn">방 생성 + 초대 링크 발급</button>
+
+            <div style="margin-top:10px;padding:9px;background:#ecfaf4;border-radius:7px;font-size:11px;color:#0a5a38;display:flex;align-items:center;gap:6px">
+              🔗 wandermap.io/join/<strong>a7f3c2</strong>
+              <span style="margin-left:auto;font-weight:600;cursor:pointer">복사</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wf-arrow-mid">→</div>
+
+      <!-- Screen 2: 선호도 설문 -->
+      <div>
+        <div class="wf-label">② 선호도 설문 (개인별)</div>
+        <div class="wf-screen">
+          <div class="wf-nav" style="padding:8px 14px">
+            <div class="wf-nav-logo"><div class="wf-logo-pin">W</div> 선호도 입력</div>
+            <span style="font-size:11px;color:var(--muted)">2/3명 완료</span>
+          </div>
+          <div class="wf-form-body">
+            <div style="background:#edf3ff;border-radius:7px;padding:9px 12px;font-size:11px;color:#1a3f9a;margin-bottom:12px">
+              📋 각자 독립적으로 제출합니다. 다른 멤버 답변은 동선 생성 후 공개됩니다.
+            </div>
+
+            <label class="wf-form-label">음식 카테고리 (복수 선택)</label>
+            <div class="wf-tag-group">
+              <span class="wf-tag sel">🍜 라멘</span>
+              <span class="wf-tag sel">🍣 스시</span>
+              <span class="wf-tag">☕ 카페</span>
+              <span class="wf-tag sel">🍰 디저트</span>
+              <span class="wf-tag">🥩 야키니쿠</span>
+              <span class="wf-tag">🍱 편의점 투어</span>
+            </div>
+
+            <label class="wf-form-label">활동 유형</label>
+            <div class="wf-tag-group">
+              <span class="wf-tag sel">🏛 관광지</span>
+              <span class="wf-tag">🛍 쇼핑</span>
+              <span class="wf-tag sel">📸 인스타 스팟</span>
+              <span class="wf-tag">🎮 오락</span>
+            </div>
+
+            <label class="wf-form-label">기피 장소 키워드</label>
+            <input class="wf-input" value="클럽, 술집" readonly>
+
+            <label class="wf-form-label">자유 메모</label>
+            <textarea class="wf-input" rows="2" readonly style="resize:none">하루에 너무 많이 걷는 건 힘들어요. 오전 느긋하게 시작하고 싶어요!</textarea>
+
+            <button class="wf-submit-btn">제출하기 →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="wf-arrow-mid">→</div>
+
+      <!-- Screen 3: 동선 확정 뷰 -->
+      <div>
+        <div class="wf-label">③ 동선 확정 & 타임라인</div>
+        <div class="wf-screen">
+          <div class="wf-nav" style="padding:8px 14px">
+            <div class="wf-nav-logo"><div class="wf-logo-pin">W</div> 확정 동선</div>
+            <span style="font-size:11px;padding:3px 10px;background:#d4f4e0;color:#0a5a30;border-radius:20px;font-weight:600">✓ 전원 확정</span>
+          </div>
+          <div style="height:120px;background:#e8e8e0;position:relative;overflow:hidden">
+            <div style="position:absolute;top:42%;left:0;right:0;height:14px;background:#c8c8be;opacity:.7"></div>
+            <div style="position:absolute;left:28%;top:0;bottom:0;width:11px;background:#c8c8be;opacity:.7"></div>
+            <!-- Route line SVG -->
+            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 300 120">
+              <polyline points="60,38 105,65 160,42 225,55" fill="none" stroke="#1a9e7a" stroke-width="2" stroke-dasharray="5 3" opacity=".7"/>
+            </svg>
+            <div class="wf-pin" style="background:#1a5fa0;top:22%;left:17%">1</div>
+            <div class="wf-pin" style="background:#1a9e7a;top:44%;left:32%">2</div>
+            <div class="wf-pin" style="background:#6d44d4;top:28%;left:50%">3</div>
+            <div class="wf-pin" style="background:#c07000;top:37%;left:70%">4</div>
+          </div>
+          <div style="padding:10px 14px;display:flex;flex-direction:column;gap:7px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:2px">1일차 · 10월 24일 · 총 4곳 · 예상 7.2km</div>
+            <!-- Timeline items -->
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <div style="width:20px;height:20px;border-radius:50%;background:#1a5fa0;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">1</div>
+                <div style="width:1px;height:18px;background:var(--border);margin:2px 0"></div>
+              </div>
+              <div style="flex:1;padding-top:1px">
+                <div style="font-size:12px;font-weight:600">츠지한</div>
+                <div style="font-size:10px;color:var(--muted)">10:00 · 일식 · 약 60분</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <div style="width:20px;height:20px;border-radius:50%;background:#1a9e7a;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">2</div>
+                <div style="width:1px;height:18px;background:var(--border);margin:2px 0"></div>
+              </div>
+              <div style="flex:1;padding-top:1px">
+                <div style="font-size:12px;font-weight:600">푸글렌 도쿄</div>
+                <div style="font-size:10px;color:var(--muted)">11:20 · 카페 · 도보 8분</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <div style="width:20px;height:20px;border-radius:50%;background:#6d44d4;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">3</div>
+              </div>
+              <div style="flex:1;padding-top:1px">
+                <div style="font-size:12px;font-weight:600">시부야 스카이</div>
+                <div style="font-size:10px;color:var(--muted)">13:00 · 전망대 · 도보 12분</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;gap:8px">
+            <button style="flex:1;padding:9px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:#fff;cursor:pointer">📤 공유</button>
+            <button style="flex:2;padding:9px;font-size:12px;background:#1a9e7a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600">🗺 네이버 지도로 열기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="chapter-divider"></div>
+
+<!-- ═══════════ CHAPTER 1: 기획서 ═══════════ -->
+<div class="chapter">
+  <div class="chapter-header ch-1">
+    <div class="ch-icon">🗺</div>
+    <div>
+      <h1>프로젝트 기획서</h1>
+      <p>서론 · 핵심 기능 · 기능 명세 · 유저 플로우 · 시스템 구성도 · 기술 스택 · ERD · MVP</p>
+    </div>
+  </div>
+
+  <!-- 서론 -->
+  <div class="section" id="intro">
+    <h2 class="sh">서론 &amp; 개요</h2>
+    <div class="callout callout-green">
+      <strong>한 줄 소개</strong><br>
+      "스프레드시트로 싸우던 그룹 여행 계획, AI가 동선으로 정리해드립니다."<br>
+      파편화된 SNS 핫플 정보를 취합하여, LLM 환각 없이 네이버 실시간 데이터 기반으로 짜주는 <strong>그룹 동선 플래너</strong>.
+    </div>
+
+    <h3 class="sh3">배경 — 우리가 해결하는 문제</h3>
+    <div class="flow-box">
+      <div class="flow-step"><div class="flow-num">1</div><div class="flow-content"><div class="flow-title">흩어진 정보</div><div class="flow-sub">카카오톡 단톡방의 "여기 가고 싶다" 메시지들 — 수집도 정리도 안 됨</div></div></div>
+      <div class="flow-step"><div class="flow-num">2</div><div class="flow-content"><div class="flow-title">수동 동선 정리</div><div class="flow-sub">구글 스프레드시트에 이동 시간 고려 없이 직접 입력하는 비효율</div></div></div>
+      <div class="flow-step"><div class="flow-num">3</div><div class="flow-content"><div class="flow-title">의견 충돌</div><div class="flow-sub">"맛집파 vs 카페파 vs 관광지파" — 누군가 한 명이 포기</div></div></div>
+      <div class="flow-step"><div class="flow-num">4</div><div class="flow-content"><div class="flow-title">한 명이 다 짬</div><div class="flow-sub">결국 총무 한 명이 모든 계획을 짜고 지쳐버리는 구조</div></div></div>
+    </div>
+
+    <h3 class="sh3">타겟 사용자</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>구분</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td>주 타겟</td><td>20~30대, 국내외 여행을 즐기는 2~6인 그룹</td></tr>
+          <tr><td>페인포인트</td><td>여행 계획 짜는 과정이 번거롭고 의견 조율이 어려움</td></tr>
+          <tr><td>사용 맥락</td><td>출발 1주일~1개월 전, 모바일·웹 동시 접근</td></tr>
+          <tr><td>특징</td><td>인스타·유튜브에서 핫플을 수집하고 단톡방에 링크만 던지는 세대</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 핵심 기능 -->
+  <div class="section" id="core-features">
+    <h2 class="sh">핵심 기능</h2>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-id">F-01</div>
+        <h4>그룹 방 생성 &amp; 초대</h4>
+        <p>UUID 기반 초대 링크 생성 → 카카오톡/문자 공유 → 클릭 시 로그인 후 자동 합류.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-id">F-02</div>
+        <h4>멤버별 선호도 설문</h4>
+        <p>음식 카테고리, 활동 유형, 기피 장소 키워드, 자유 메모를 각자 독립 제출.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-id">F-03</div>
+        <h4>AI 기반 동선 자동 생성</h4>
+        <p>Gemini는 의도 파악·구조화만 담당. 실제 장소는 Naver 실데이터만 사용해 환각 방지.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-id">F-04</div>
+        <h4>실시간 그룹 투표</h4>
+        <p>WebSocket(STOMP) 기반 👍/👎 투표. 과반수 찬성 시 동선 자동 확정 + 전체 브로드캐스트.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-id">F-05</div>
+        <h4>동선 지도 시각화</h4>
+        <p>확정 장소를 Naver Maps에 번호 핀으로 표시. 경로 라인 렌더링. 핀 클릭 시 지도 앱 연동.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기능 명세 -->
+  <div class="section" id="feature-spec">
+    <h2 class="sh">기능 명세서</h2>
+    <h3 class="sh3">MVP (1단계) — 필수 기능</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>기능명</th><th>설명</th><th>우선순위</th></tr></thead>
+        <tbody>
+          <tr><td>M-01</td><td>소셜 로그인</td><td>카카오 / 구글 OAuth 2.0</td><td><span class="badge badge-red">필수</span></td></tr>
+          <tr><td>M-02</td><td>여행 방 생성</td><td>제목, 목적지(시/도), 날짜, 인원</td><td><span class="badge badge-red">필수</span></td></tr>
+          <tr><td>M-03</td><td>UUID 초대 링크</td><td>방 생성 시 고유 링크 자동 발급</td><td><span class="badge badge-red">필수</span></td></tr>
+          <tr><td>M-04</td><td>선호도 설문 제출</td><td>개인별 음식/활동 선호도 JSON 저장</td><td><span class="badge badge-red">필수</span></td></tr>
+          <tr><td>M-05</td><td>AI 동선 생성</td><td>Gemini 구조화 → Naver 실데이터 매핑</td><td><span class="badge badge-red">필수</span></td></tr>
+          <tr><td>M-06</td><td>지도 시각화</td><td>Naver Maps 핀 + 경로 라인</td><td><span class="badge badge-red">필수</span></td></tr>
+          <tr><td>M-07</td><td>실시간 투표</td><td>WebSocket 기반 👍👎 투표</td><td><span class="badge badge-red">필수</span></td></tr>
+          <tr><td>M-08</td><td>동선 확정</td><td>과반수 시 itinerary 상태 변경</td><td><span class="badge badge-red">필수</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="sh3">2단계 — 고도화</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>기능명</th><th>설명</th><th>우선순위</th></tr></thead>
+        <tbody>
+          <tr><td>E-01</td><td>AI 긴급 우회</td><td>교착상태 시 대체 장소 제안</td><td><span class="badge badge-amber">높음</span></td></tr>
+          <tr><td>E-02</td><td>총무 정산기</td><td>지출 입력 → 1/N + 최소 이체 계산</td><td><span class="badge badge-amber">높음</span></td></tr>
+          <tr><td>E-03</td><td>드래그&amp;드롭 편집</td><td>확정 동선 순서 수동 변경</td><td><span class="badge badge-gray">중간</span></td></tr>
+          <tr><td>E-04</td><td>일정 공유 링크</td><td>비회원 읽기 전용 공유 페이지</td><td><span class="badge badge-gray">중간</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 유저 플로우 -->
+  <div class="section" id="user-flow">
+    <h2 class="sh">유저 플로우</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem">
+      <div>
+        <h3 class="sh3" style="color:var(--accent)">방장</h3>
+        <div class="flow-box">
+          <div class="flow-step"><div class="flow-num">1</div><div class="flow-content"><div class="flow-title">소셜 로그인</div></div></div>
+          <div class="flow-step"><div class="flow-num">2</div><div class="flow-content"><div class="flow-title">여행 방 생성</div><div class="flow-sub">제목 / 목적지 / 날짜</div></div></div>
+          <div class="flow-step"><div class="flow-num">3</div><div class="flow-content"><div class="flow-title">UUID 초대 링크 발급</div><div class="flow-sub">카카오톡 / 문자로 공유</div></div></div>
+        </div>
+      </div>
+      <div>
+        <h3 class="sh3" style="color:var(--blue)">일반 멤버</h3>
+        <div class="flow-box">
+          <div class="flow-step"><div class="flow-num blue">1</div><div class="flow-content"><div class="flow-title">링크 클릭</div></div></div>
+          <div class="flow-step"><div class="flow-num blue">2</div><div class="flow-content"><div class="flow-title">소셜 로그인</div></div></div>
+          <div class="flow-step"><div class="flow-num blue">3</div><div class="flow-content"><div class="flow-title">방 자동 합류</div></div></div>
+        </div>
+      </div>
+    </div>
+    <h3 class="sh3">전체 멤버 공통 플로우</h3>
+    <div class="flow-box">
+      <div class="flow-step"><div class="flow-num">4</div><div class="flow-content"><div class="flow-title">선호도 설문 각자 제출</div><div class="flow-sub">음식 카테고리 · 활동 유형 · 기피 장소 · 자유 메모</div></div></div>
+      <div class="flow-step"><div class="flow-num">5</div><div class="flow-content"><div class="flow-title">AI 동선 생성 요청</div><div class="flow-sub">Gemini 구조화 → Naver 실데이터 → Greedy TSP 최적화</div></div></div>
+      <div class="flow-step"><div class="flow-num">6</div><div class="flow-content"><div class="flow-title">실시간 투표</div><div class="flow-sub">후보 장소별 👍👎 — WebSocket으로 즉시 반영</div></div></div>
+      <div class="flow-step"><div class="flow-num">7</div><div class="flow-content"><div class="flow-title">동선 확정 &amp; 지도 시각화</div><div class="flow-sub">과반수 찬성 장소만 일자별 동선 확정 표시</div></div></div>
+      <div class="flow-step"><div class="flow-num">8</div><div class="flow-content"><div class="flow-title">[선택] 총무 정산기 &amp; 여행 완료 🎉</div></div></div>
+    </div>
+  </div>
+
+  <!-- 시스템 구성도 -->
+  <div class="section" id="architecture">
+    <h2 class="sh">시스템 구성도</h2>
+
+    <div class="arch-diagram">
+      <!-- Client Layer -->
+      <div class="arch-layer arch-layer-client">
+        <div class="arch-layer-label">Client — Browser / Mobile</div>
+        <div class="arch-boxes">
+          <div class="arch-box arch-box-blue">React 18 + TypeScript + Vite</div>
+          <div class="arch-box arch-box-blue">Zustand (전역 상태)</div>
+          <div class="arch-box arch-box-blue">TanStack Query (서버 상태)</div>
+          <div class="arch-box arch-box-purple">STOMP.js / SockJS (실시간)</div>
+          <div class="arch-box arch-box-gray">Naver Maps JS SDK</div>
+          <div class="arch-box arch-box-gray">Axios + 인터셉터</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow-down">
+        <span style="flex:1;text-align:center">HTTP / REST<br><span style="font-size:.7rem;color:#b0b0b8">상태 조회·변경</span></span>
+        <span style="flex:1;text-align:center">WebSocket (STOMP)<br><span style="font-size:.7rem;color:#b0b0b8">실시간 이벤트</span></span>
+      </div>
+
+      <!-- Server Layer -->
+      <div class="arch-layer arch-layer-server">
+        <div class="arch-layer-label">Server — Spring Boot 4.0.6 / Java 25 (Railway)</div>
+        <div class="arch-boxes" style="margin-bottom:.7rem">
+          <div class="arch-box arch-box-green">REST Controller</div>
+          <div class="arch-box arch-box-green">STOMP WebSocket Broker</div>
+          <div class="arch-box arch-box-green">AI Service (Gemini)</div>
+          <div class="arch-box arch-box-green">Spring Security + JWT</div>
+        </div>
+        <div class="arch-boxes">
+          <div class="arch-box arch-box-gray">TripService</div>
+          <div class="arch-box arch-box-gray">VoteService</div>
+          <div class="arch-box arch-box-gray">ItineraryService + Greedy TSP</div>
+          <div class="arch-box arch-box-gray">GeminiClient</div>
+          <div class="arch-box arch-box-gray">NaverClient</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow-down">
+        <span style="flex:1;text-align:center">JDBC / JPA<br><span style="font-size:.7rem;color:#b0b0b8">PostgreSQL</span></span>
+        <span style="flex:1;text-align:center">HTTP API<br><span style="font-size:.7rem;color:#b0b0b8">Gemini</span></span>
+        <span style="flex:1;text-align:center">HTTP API<br><span style="font-size:.7rem;color:#b0b0b8">Naver</span></span>
+      </div>
+
+      <!-- Infra Layer -->
+      <div class="arch-layer arch-layer-infra">
+        <div class="arch-layer-label">External Services</div>
+        <div class="arch-boxes">
+          <div class="arch-box arch-box-purple">Supabase (PostgreSQL 500MB 무료)</div>
+          <div class="arch-box arch-box-blue">Gemini API (구조화 · 무료 tier)</div>
+          <div class="arch-box arch-box-green">Naver Local Search API</div>
+          <div class="arch-box arch-box-green">Naver Directions API</div>
+          <div class="arch-box arch-box-green">Naver Maps JS SDK</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sh3">배포 파이프라인</h3>
+    <div class="flow-box">
+      <div class="flow-step"><div class="flow-num">1</div><div class="flow-content"><div class="flow-title">git push → GitHub</div><div class="flow-sub">PR 생성 시 GitHub Actions CI 자동 실행 (빌드 + 테스트)</div></div></div>
+      <div class="flow-step"><div class="flow-num">2</div><div class="flow-content"><div class="flow-title">Vercel — 프론트 자동 배포</div><div class="flow-sub">PR Preview URL 자동 생성. 머지 시 Production 배포</div></div></div>
+      <div class="flow-step"><div class="flow-num">3</div><div class="flow-content"><div class="flow-title">Railway — 백엔드 Docker 컨테이너 배포</div><div class="flow-sub">Spring Boot JAR → Docker 이미지 → Railway 자동 배포. 슬립 없음</div></div></div>
+    </div>
+  </div>
+
+  <!-- 기술 스택 -->
+  <div class="section" id="tech-stack">
+    <h2 class="sh">기술 스택</h2>
+    <div class="callout callout-blue">Java 25와 Spring Boot 4.0.6은 현시점(2026년 6월) 기준 최신 버전입니다. Spring Boot 4.x는 Spring Framework 7 기반으로, Virtual Threads(Loom) 기본 지원과 GraalVM 네이티브 이미지 지원이 강화됩니다.</div>
+
+    <h3 class="sh3">백엔드</h3>
+    <div class="stack-grid">
+      <div class="stack-row">
+        <div class="stack-label">Language</div>
+        <div class="stack-val">
+          Java 25 <span class="version-badge vb-new">최신</span>
+          <small>Virtual Threads (Loom) 정식 지원, Record Patterns, String Templates 안정화</small>
+        </div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">Framework</div>
+        <div class="stack-val">
+          Spring Boot 4.0.6 <span class="version-badge vb-new">최신</span>
+          <small>Spring Framework 7 기반. Jakarta EE 11. Spring WebFlux 통합 강화</small>
+        </div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">ORM</div>
+        <div class="stack-val">Spring Data JPA + QueryDSL<small>복잡한 동선 필터 쿼리 지원</small></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">Database</div>
+        <div class="stack-val">Supabase (PostgreSQL)<small>500MB 무료, Auth 내장, Row Level Security</small></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">Security</div>
+        <div class="stack-val">Spring Security 7 + JWT<small>OAuth 2.0 소셜 로그인 (카카오/구글)</small></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">실시간</div>
+        <div class="stack-val">Spring WebSocket (STOMP)<small>그룹 투표 실시간 동기화. Virtual Threads로 처리 효율 향상</small></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">AI</div>
+        <div class="stack-val">Gemini API<small>무료 tier, 텍스트 구조화 전용 (환각 방지를 위해 장소 실데이터와 분리)</small></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">지도/검색</div>
+        <div class="stack-val">Naver Local + Directions API<small>국내 실데이터, 일 25,000건 무료 (카드 등록 후 한도 설정)</small></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">API 문서</div>
+        <div class="stack-val">SpringDoc OpenAPI 3 (Swagger)<small>자동 문서 생성, 팀 협업 기반</small></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">배포</div>
+        <div class="stack-val">Railway<small>무료 크레딧 $5/월, 슬립 없음, Docker 자동 빌드</small></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-label">CI/CD</div>
+        <div class="stack-val">GitHub Actions<small>PR 자동 빌드/테스트 → main 머지 시 자동 배포</small></div>
+      </div>
+    </div>
+
+    <h3 class="sh3">프론트엔드</h3>
+    <div class="stack-grid">
+      <div class="stack-row"><div class="stack-label">Language</div><div class="stack-val">TypeScript<small>타입 안정성, IDE 지원</small></div></div>
+      <div class="stack-row"><div class="stack-label">Framework</div><div class="stack-val">React 18<small>Concurrent Features, Suspense 활용</small></div></div>
+      <div class="stack-row"><div class="stack-label">Build</div><div class="stack-val">Vite<small>빠른 개발 환경, HMR</small></div></div>
+      <div class="stack-row"><div class="stack-label">전역 상태</div><div class="stack-val">Zustand<small>가볍고 보일러플레이트 최소, 4개 스토어 분리</small></div></div>
+      <div class="stack-row"><div class="stack-label">서버 상태</div><div class="stack-val">TanStack Query<small>캐싱, 로딩/에러 처리, WS 이벤트 후 자동 무효화</small></div></div>
+      <div class="stack-row"><div class="stack-label">스타일링</div><div class="stack-val">Tailwind CSS<small>빠른 UI 구현</small></div></div>
+      <div class="stack-row"><div class="stack-label">HTTP</div><div class="stack-val">Axios<small>인터셉터 기반 JWT 공통 처리 + 토큰 자동 갱신</small></div></div>
+      <div class="stack-row"><div class="stack-label">실시간</div><div class="stack-val">SockJS + STOMP.js<small>WebSocket 클라이언트, 지수 백오프 재연결</small></div></div>
+      <div class="stack-row"><div class="stack-label">지도</div><div class="stack-val">Naver Maps JS SDK<small>국내 정확도 최고, diff 기반 마커 관리로 리렌더링 최소화</small></div></div>
+      <div class="stack-row"><div class="stack-label">배포</div><div class="stack-val">Vercel<small>PR 미리보기 자동 생성, 무료</small></div></div>
+    </div>
+  </div>
+
+  <!-- ERD -->
+  <div class="section" id="erd">
+    <h2 class="sh">초기 ERD</h2>
+
+    <h3 class="sh3">테이블 관계 시각화</h3>
+    <div class="erd-diagram">
+      <div class="erd-table">
+        <div class="erd-table-header" style="background:#d4f4e0;color:#0a5a30">
+          👤 users
+        </div>
+        <div class="erd-table-body">
+          <div class="erd-col"><span class="erd-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">BIGSERIAL</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">email</span><span class="erd-col-type">VARCHAR</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">provider</span><span class="erd-col-type">KAKAO|GOOGLE</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">oauth_id</span><span class="erd-col-type">VARCHAR</span></div>
+        </div>
+      </div>
+
+      <div class="erd-table">
+        <div class="erd-table-header" style="background:#ecfaf4;color:#0a5a30">
+          🗺 trips
+        </div>
+        <div class="erd-table-body">
+          <div class="erd-col"><span class="erd-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">BIGSERIAL</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">invite_code</span><span class="erd-col-type">UUID</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">status</span><span class="erd-col-type">PLANNING→COMPLETED</span></div>
+          <div class="erd-col"><span class="erd-fk">FK</span><span class="erd-col-name">created_by</span><span class="erd-col-type">→ users</span></div>
+        </div>
+      </div>
+
+      <div class="erd-table">
+        <div class="erd-table-header" style="background:#edf3ff;color:#1a3f9a">
+          👥 trip_members
+        </div>
+        <div class="erd-table-body">
+          <div class="erd-col"><span class="erd-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">BIGSERIAL</span></div>
+          <div class="erd-col"><span class="erd-fk">FK</span><span class="erd-col-name">trip_id</span><span class="erd-col-type">→ trips</span></div>
+          <div class="erd-col"><span class="erd-fk">FK</span><span class="erd-col-name">user_id</span><span class="erd-col-type">→ users</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">role</span><span class="erd-col-type">OWNER|MEMBER</span></div>
+        </div>
+      </div>
+
+      <div class="erd-table">
+        <div class="erd-table-header" style="background:#f3efff;color:#4a1f9a">
+          📋 preferences
+        </div>
+        <div class="erd-table-body">
+          <div class="erd-col"><span class="erd-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">BIGSERIAL</span></div>
+          <div class="erd-col"><span class="erd-fk">FK</span><span class="erd-col-name">trip_id, user_id</span><span class="erd-col-type">UNIQUE</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">food_categories</span><span class="erd-col-type">JSONB</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">activity_types</span><span class="erd-col-type">JSONB</span></div>
+        </div>
+      </div>
+
+      <div class="erd-table">
+        <div class="erd-table-header" style="background:#f0f0ec;color:#3a3a40">
+          📍 places
+        </div>
+        <div class="erd-table-body">
+          <div class="erd-col"><span class="erd-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">BIGSERIAL</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">naver_place_id</span><span class="erd-col-type">UNIQUE</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">latitude/longitude</span><span class="erd-col-type">DECIMAL</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">cached_at</span><span class="erd-col-type">TIMESTAMP</span></div>
+        </div>
+      </div>
+
+      <div class="erd-table">
+        <div class="erd-table-header" style="background:#fff8e6;color:#7a4800">
+          🗓 itinerary_places
+        </div>
+        <div class="erd-table-body">
+          <div class="erd-col"><span class="erd-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">BIGSERIAL</span></div>
+          <div class="erd-col"><span class="erd-fk">FK</span><span class="erd-col-name">day_id, place_id</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">visit_order</span><span class="erd-col-type">INT</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">status</span><span class="erd-col-type">VOTING|CONFIRMED</span></div>
+        </div>
+      </div>
+
+      <div class="erd-table">
+        <div class="erd-table-header" style="background:#ffe0e0;color:#8a1010">
+          👍 place_votes
+        </div>
+        <div class="erd-table-body">
+          <div class="erd-col"><span class="erd-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">BIGSERIAL</span></div>
+          <div class="erd-col"><span class="erd-fk">FK</span><span class="erd-col-name">itinerary_place_id</span></div>
+          <div class="erd-col"><span class="erd-fk">FK</span><span class="erd-col-name">user_id</span><span class="erd-col-type">→ users</span></div>
+          <div class="erd-col"><span class="erd-col-name" style="margin-left:28px">vote_type</span><span class="erd-col-type">UP|DOWN</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sh3">관계 요약</h3>
+    <div class="callout callout-gray">
+      <code>users</code> ──&lt; <code>trip_members</code> &gt;── <code>trips</code><br>
+      <code>trips</code> ──&lt; <code>itinerary_days</code> ──&lt; <code>itinerary_places</code> ──&lt; <code>place_votes</code> &gt;── <code>users</code><br>
+      <code>itinerary_places</code> ──&gt; <code>places</code> (Naver API 캐시)<br>
+      <code>trips</code> ──&lt; <code>settlements</code> ──&lt; <code>settlement_splits</code> &gt;── <code>users</code> (2단계)
+    </div>
+  </div>
+
+  <!-- MVP -->
+  <div class="section" id="mvp">
+    <h2 class="sh">결론 &amp; MVP 범위</h2>
+    <h3 class="sh3">MVP 완성 기준 — 6가지 플로우가 막힘없이 동작하면 완성</h3>
+    <ul class="mvp-list">
+      <li><span class="mvp-check">✓</span><span><strong>소셜 로그인</strong> — 카카오 또는 구글 OAuth로 로그인/회원가입</span></li>
+      <li><span class="mvp-check">✓</span><span><strong>방 생성 &amp; 초대</strong> — UUID 링크 생성 → 멤버 합류</span></li>
+      <li><span class="mvp-check">✓</span><span><strong>선호도 제출</strong> — 전원 제출 완료 상태 확인</span></li>
+      <li><span class="mvp-check">✓</span><span><strong>AI 동선 생성</strong> — Gemini 구조화 → Naver 실데이터 → 지도 핀 표시</span></li>
+      <li><span class="mvp-check">✓</span><span><strong>실시간 투표</strong> — WebSocket 투표 → 과반수 시 동선 확정</span></li>
+      <li><span class="mvp-check">✓</span><span><strong>동선 확정 뷰</strong> — 최종 일자별 동선을 지도에서 확인</span></li>
+    </ul>
+
+    <h3 class="sh3">포트폴리오 어필 포인트</h3>
+    <div class="appeal-grid">
+      <div class="appeal-card">
+        <div class="ap-num">POINT 01</div>
+        <h4>AI 아키텍처 설계</h4>
+        <p>LLM 환각을 인지하고 AI 역할을 구조화로만 제한. 실데이터와 분리한 설계 판단력 어필.</p>
+      </div>
+      <div class="appeal-card">
+        <div class="ap-num">POINT 02</div>
+        <h4>실시간 통신 구현</h4>
+        <p>WebSocket + STOMP로 HTTP 폴링 대비 서버 부하 절감 및 UX 개선. 재연결 정책까지 설계.</p>
+      </div>
+      <div class="appeal-card">
+        <div class="ap-num">POINT 03</div>
+        <h4>최신 스택 운용</h4>
+        <p>Java 25 Virtual Threads + Spring Boot 4.0.6. 최신 LTS 전환 판단과 트레이드오프 설명 가능.</p>
+      </div>
+      <div class="appeal-card">
+        <div class="ap-num">POINT 04</div>
+        <h4>외부 API 통합</h4>
+        <p>Gemini + Naver Local + Directions + Maps 4개 API 통합. Fallback 매트릭스까지 설계.</p>
+      </div>
+      <div class="appeal-card">
+        <div class="ap-num">POINT 05</div>
+        <h4>무료 인프라 운용</h4>
+        <p>일일 한도 설정으로 과금 리스크 제로. 전체 무료로 운용 가능한 아키텍처 설계.</p>
+      </div>
+      <div class="appeal-card">
+        <div class="ap-num">POINT 06</div>
+        <h4>팀 협업 체계</h4>
+        <p>GitHub Actions CI/CD, Swagger 문서 자동화, 역할 분담 설계. 3인 협업 실전 경험.</p>
+      </div>
+    </div>
+
+    <h3 class="sh3">로드맵</h3>
+    <div class="roadmap">
+      <div class="roadmap-phase">
+        <div class="roadmap-header ph1">✅ 1단계 — MVP</div>
+        <div class="roadmap-body">
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#1a9e7a"></div>소셜 로그인 (카카오/구글)</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#1a9e7a"></div>방 생성 + UUID 초대 링크</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#1a9e7a"></div>선호도 설문 제출</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#1a9e7a"></div>AI 동선 생성</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#1a9e7a"></div>실시간 투표 + 동선 확정</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#1a9e7a"></div>네이버 지도 시각화</div>
+        </div>
+      </div>
+      <div class="roadmap-phase">
+        <div class="roadmap-header ph2">🔧 2단계 — 고도화</div>
+        <div class="roadmap-body">
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#2c7be5"></div>AI 긴급 우회</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#2c7be5"></div>총무 정산기</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#2c7be5"></div>드래그&amp;드롭 편집</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#2c7be5"></div>비회원 공유 링크</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#2c7be5"></div>장소 스크랩 (찜)</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#2c7be5"></div>역할 분담 시스템</div>
+        </div>
+      </div>
+      <div class="roadmap-phase">
+        <div class="roadmap-header ph3">🚀 3단계 — 확장</div>
+        <div class="roadmap-body">
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#6d44d4"></div>날씨 기반 재조정</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#6d44d4"></div>여행 후기 공유 카드</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#6d44d4"></div>예산 최소 송금 알고리즘</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#6d44d4"></div>방 템플릿 저장/재사용</div>
+          <div class="roadmap-item"><div class="roadmap-dot" style="background:#6d44d4"></div>OCR 영수증 인식</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="chapter-divider"></div>
+
+<!-- ═══════════ CHAPTER 2: 백엔드 설계 ═══════════ -->
+<div class="chapter">
+  <div class="chapter-header ch-2">
+    <div class="ch-icon">⚙️</div>
+    <div>
+      <h1>백엔드 설계서</h1>
+      <p>유저 플로우 · ERD SQL · 시퀀스 다이어그램 · Fallback · REST vs WebSocket · 패키지 구조</p>
+    </div>
+  </div>
+
+  <div class="section" id="be-flow">
+    <h2 class="sh">핵심 유저 플로우 (백엔드 관점)</h2>
+    <div class="flow-box">
+      <div class="flow-step"><div class="flow-num blue">1</div><div class="flow-content"><div class="flow-title">OAuth 소셜 로그인</div><div class="flow-sub">Provider 인증코드 수신 → AccessToken 교환 → users Upsert → JWT 발급</div></div></div>
+      <div class="flow-step"><div class="flow-num blue">2</div><div class="flow-content"><div class="flow-title">여행 방 생성</div><div class="flow-sub">POST /api/trips → trips INSERT (status: PLANNING) → invite_code UUID 자동 생성 → trip_members INSERT (OWNER)</div></div></div>
+      <div class="flow-step"><div class="flow-num blue">3</div><div class="flow-content"><div class="flow-title">멤버 합류</div><div class="flow-sub">POST /api/trips/join/{invite_code} → 유효성 검증 → 중복 방지 → trip_members INSERT (MEMBER)</div></div></div>
+      <div class="flow-step"><div class="flow-num blue">4</div><div class="flow-content"><div class="flow-title">선호도 제출</div><div class="flow-sub">POST /api/trips/{id}/preferences → 1인 1회 검증 → preferences INSERT → 전원 제출 시 WS 브로드캐스트</div></div></div>
+      <div class="flow-step"><div class="flow-num blue">5</div><div class="flow-content"><div class="flow-title">AI 동선 생성</div><div class="flow-sub">Gemini API 호출 → Naver Local 검색 → places Upsert(캐싱) → Directions 이동시간 → Greedy TSP → itinerary INSERT → WS 완료 브로드캐스트</div></div></div>
+      <div class="flow-step"><div class="flow-num blue">6</div><div class="flow-content"><div class="flow-title">실시간 투표</div><div class="flow-sub">WS PUBLISH /app/trip/{id}/vote → place_votes Upsert → 과반수 시 status CONFIRMED → WS 브로드캐스트</div></div></div>
+      <div class="flow-step"><div class="flow-num blue">7</div><div class="flow-content"><div class="flow-title">동선 확정 조회</div><div class="flow-sub">GET /api/trips/{id}/itinerary → CONFIRMED 장소만 일자별 정렬 반환</div></div></div>
+    </div>
+  </div>
+
+  <div class="section" id="be-erd">
+    <h2 class="sh">ERD SQL 상세</h2>
+    <pre><code class="language-sql">-- 회원
+CREATE TABLE users (
+    id            BIGSERIAL PRIMARY KEY,
+    email         VARCHAR(255) UNIQUE NOT NULL,
+    nickname      VARCHAR(50)  NOT NULL,
+    profile_image VARCHAR(500),
+    provider      VARCHAR(20)  NOT NULL,   -- KAKAO | GOOGLE
+    oauth_id      VARCHAR(255) NOT NULL,
+    created_at    TIMESTAMP    DEFAULT NOW(),
+    UNIQUE (provider, oauth_id)
+);
+
+-- 여행 방
+CREATE TABLE trips (
+    id           BIGSERIAL PRIMARY KEY,
+    invite_code  VARCHAR(36)  UNIQUE NOT NULL,   -- UUID
+    title        VARCHAR(100) NOT NULL,
+    destination  VARCHAR(50)  NOT NULL,
+    start_date   DATE         NOT NULL,
+    end_date     DATE         NOT NULL,
+    status       VARCHAR(20)  DEFAULT 'PLANNING',
+    created_by   BIGINT       REFERENCES users(id),
+    created_at   TIMESTAMP    DEFAULT NOW()
+);
+
+-- 여행 멤버
+CREATE TABLE trip_members (
+    id        BIGSERIAL PRIMARY KEY,
+    trip_id   BIGINT REFERENCES trips(id) ON DELETE CASCADE,
+    user_id   BIGINT REFERENCES users(id),
+    role      VARCHAR(10) DEFAULT 'MEMBER',
+    joined_at TIMESTAMP   DEFAULT NOW(),
+    UNIQUE (trip_id, user_id)
+);
+
+-- 개인별 선호도
+CREATE TABLE preferences (
+    id                BIGSERIAL PRIMARY KEY,
+    trip_id           BIGINT REFERENCES trips(id) ON DELETE CASCADE,
+    user_id           BIGINT REFERENCES users(id),
+    food_categories   JSONB,
+    activity_types    JSONB,
+    excluded_keywords VARCHAR(200),
+    free_memo         TEXT,
+    submitted_at      TIMESTAMP DEFAULT NOW(),
+    UNIQUE (trip_id, user_id)
+);
+
+-- Naver API 장소 캐시
+CREATE TABLE places (
+    id             BIGSERIAL PRIMARY KEY,
+    naver_place_id VARCHAR(100) UNIQUE,
+    name           VARCHAR(200) NOT NULL,
+    category       VARCHAR(100),
+    address        VARCHAR(300),
+    latitude       DECIMAL(10,7),
+    longitude      DECIMAL(10,7),
+    cached_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- 일자별 일정
+CREATE TABLE itinerary_days (
+    id         BIGSERIAL PRIMARY KEY,
+    trip_id    BIGINT REFERENCES trips(id) ON DELETE CASCADE,
+    day_number INT  NOT NULL,
+    date       DATE NOT NULL,
+    UNIQUE (trip_id, day_number)
+);
+
+-- 일정 내 장소
+CREATE TABLE itinerary_places (
+    id                       BIGSERIAL PRIMARY KEY,
+    day_id                   BIGINT REFERENCES itinerary_days(id) ON DELETE CASCADE,
+    place_id                 BIGINT REFERENCES places(id),
+    visit_order              INT  NOT NULL,
+    expected_visit_time      TIME,
+    duration_minutes         INT  DEFAULT 60,
+    travel_minutes_from_prev INT  DEFAULT 0,
+    status                   VARCHAR(20) DEFAULT 'VOTING',
+    created_at               TIMESTAMP DEFAULT NOW()
+);
+
+-- 장소 투표
+CREATE TABLE place_votes (
+    id                 BIGSERIAL PRIMARY KEY,
+    itinerary_place_id BIGINT REFERENCES itinerary_places(id) ON DELETE CASCADE,
+    user_id            BIGINT REFERENCES users(id),
+    vote_type          VARCHAR(10) NOT NULL,   -- UP | DOWN
+    voted_at           TIMESTAMP DEFAULT NOW(),
+    UNIQUE (itinerary_place_id, user_id)
+);
+
+-- 인덱스 전략
+CREATE INDEX idx_trip_members_trip_id           ON trip_members(trip_id);
+CREATE INDEX idx_preferences_trip_id            ON preferences(trip_id);
+CREATE INDEX idx_itinerary_days_trip_id         ON itinerary_days(trip_id);
+CREATE INDEX idx_itinerary_places_day_id        ON itinerary_places(day_id);
+CREATE INDEX idx_place_votes_itinerary_place_id ON place_votes(itinerary_place_id);
+CREATE INDEX idx_trips_invite_code              ON trips(invite_code);</code></pre>
+  </div>
+
+  <div class="section" id="sequence">
+    <h2 class="sh">핵심 기능 시퀀스 다이어그램</h2>
+    <h3 class="sh3">① AI 동선 생성</h3>
+    <pre><code class="language-plaintext">Client         Spring Boot        Gemini API      Naver Local    Naver Directions
+  │                 │                  │               │                │
+  │ POST /generate  │                  │               │                │
+  │────────────────▶│                  │               │                │
+  │                 │ 선호도 집계 (DB) │               │                │
+  │                 │ 구조화 요청      │               │                │
+  │                 │─────────────────▶│               │                │
+  │                 │ JSON 반환        │               │                │
+  │                 │◀─────────────────│               │                │
+  │                 │ 장소 검색 (카테고리별)            │                │
+  │                 │──────────────────────────────────▶               │
+  │                 │ 장소 목록 반환                   │                │
+  │                 │◀──────────────────────────────────               │
+  │                 │ places Upsert (캐싱)                             │
+  │                 │ 이동시간 행렬 계산 요청                            │
+  │                 │─────────────────────────────────────────────────▶│
+  │                 │ 이동시간 반환                                     │
+  │                 │◀─────────────────────────────────────────────────│
+  │                 │ Greedy TSP 연산 (내부)                           │
+  │                 │ itinerary INSERT                                 │
+  │ 202 Accepted    │                                                  │
+  │◀────────────────│                                                  │
+  │                 │ WS BROADCAST: 동선 완료 (WebSocket)              │
+  │◀════════════════│                                                  │</code></pre>
+
+    <h3 class="sh3">② 실시간 투표</h3>
+    <pre><code class="language-plaintext">멤버 A        Spring Boot       멤버 B        멤버 C
+  │                │                │             │
+  │ WS PUBLISH     │                │             │
+  │ {placeId, UP}  │                │             │
+  │───────────────▶│                │             │
+  │                │ place_votes UPSERT           │
+  │                │ 집계: UP:1 DOWN:0 — 과반수 미충족
+  │                │ BROADCAST /topic/votes       │
+  │◀═══════════════│════════════════▶════════════▶│
+  │                │                │             │
+  │                │ {placeId, UP}  │             │
+  │                │◀═══════════════│             │
+  │                │ 집계: UP:2 DOWN:0 — 과반수 충족!
+  │                │ status = CONFIRMED           │
+  │                │ BROADCAST /topic/itinerary   │
+  │◀═══════════════│════════════════▶════════════▶│</code></pre>
+
+    <h3 class="sh3">③ OAuth 소셜 로그인</h3>
+    <pre><code class="language-plaintext">Client             Spring Boot          Kakao Auth Server
+  │                     │                       │
+  │ GET /oauth/kakao     │                       │
+  │────────────────────▶│ Redirect to Kakao     │
+  │◀────────────────────│                       │
+  │ 카카오 로그인 (유저)                          │
+  │──────────────────────────────────────────────▶
+  │ Authorization Code 반환                      │
+  │◀─────────────────────────────────────────────
+  │ GET /oauth/kakao/callback?code=xxx           │
+  │────────────────────▶│ AccessToken 교환       │
+  │                     │──────────────────────▶│
+  │                     │◀──────────────────────│
+  │                     │ 유저 정보 조회         │
+  │                     │──────────────────────▶│
+  │                     │◀──────────────────────│
+  │                     │ users Upsert · JWT 발급│
+  │ {accessToken, refreshToken}                  │
+  │◀────────────────────│                       │</code></pre>
+  </div>
+
+  <div class="section" id="fallback">
+    <h2 class="sh">예외 처리 &amp; Fallback 정책</h2>
+    <h3 class="sh3">Fallback 매트릭스</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>장애 대상</th><th>감지 방법</th><th>Fallback 전략</th><th>사용자 경험</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini API</td><td>HTTP 5xx / Timeout 10s</td><td>기본 카테고리 키워드로 Naver 직접 검색</td><td>"AI 분석 생략, 기본 추천으로 진행" 안내</td></tr>
+          <tr><td>Naver Local</td><td>HTTP 5xx / 빈 결과</td><td>places 테이블 캐시 데이터 반환</td><td>이전 캐시 장소 목록으로 대체</td></tr>
+          <tr><td>Naver Directions</td><td>HTTP 5xx / Timeout 5s</td><td>위경도 직선거리 기반 소요시간 추정 (4km/h)</td><td>"약 N분" 표시 (부정확 안내 포함)</td></tr>
+          <tr><td>Supabase DB</td><td>Connection Timeout</td><td>HikariCP 재시도 3회 (1s 간격)</td><td>로딩 지연 후 재시도</td></tr>
+          <tr><td>WebSocket</td><td>Disconnect 이벤트</td><td>SockJS 자동 재연결 (지수 백오프 최대 3회)</td><td>연결 끊김 토스트 → 자동 재연결</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sh3">Retry 정책 (application.yml)</h3>
+    <pre><code class="language-yaml">resilience4j:
+  retry:
+    instances:
+      gemini:
+        max-attempts: 2
+        wait-duration: 2s
+      naver-local:
+        max-attempts: 3
+        wait-duration: 1s
+      naver-directions:
+        max-attempts: 2
+        wait-duration: 1s</code></pre>
+
+    <h3 class="sh3">GlobalExceptionHandler 구조</h3>
+    <pre><code class="language-java">@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ExternalApiException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleExternalApi(ExternalApiException e) {
+        log.warn("External API failed: {}", e.getMessage());
+        return ResponseEntity.status(503).body(
+            ErrorResponse.of("EXTERNAL_API_ERROR", e.getFallbackMessage())
+        );
+    }
+
+    @ExceptionHandler(UnauthorizedTripAccessException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleUnauthorized(UnauthorizedTripAccessException e) {
+        return ResponseEntity.status(403).body(
+            ErrorResponse.of("FORBIDDEN", "해당 여행 방의 멤버가 아닙니다.")
+        );
+    }
+
+    @ExceptionHandler(DuplicatePreferenceException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleDuplicate(DuplicatePreferenceException e) {
+        return ResponseEntity.status(409).body(
+            ErrorResponse.of("DUPLICATE", "이미 선호도를 제출하셨습니다.")
+        );
+    }
+}</code></pre>
+  </div>
+
+  <div class="section" id="rest-ws">
+    <h2 class="sh">REST API vs WebSocket 역할 분담</h2>
+    <div class="callout callout-blue">
+      <strong>원칙</strong> — HTTP REST = 상태 조회/변경 &nbsp;|&nbsp; WebSocket = 실시간 이벤트 전파<br>
+      모든 통신을 WebSocket으로 하면 서버 부하 증가 + 재연결 시 과거 상태를 잃는다. REST로 초기 상태를 로드하고, WS로 델타 이벤트만 수신하는 구조.
+    </div>
+
+    <h3 class="sh3">HTTP REST API</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>URI</th><th>설명</th><th>인증</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/api/auth/kakao</code></td><td>카카오 로그인</td><td>❌</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/api/auth/refresh</code></td><td>토큰 갱신</td><td>❌</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/api/trips</code></td><td>여행 방 생성</td><td>✅</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/api/trips/{tripId}</code></td><td>방 정보 조회</td><td>✅</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/api/trips/join/{inviteCode}</code></td><td>초대 링크로 방 합류</td><td>✅</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/api/trips/{tripId}/preferences</code></td><td>선호도 제출</td><td>✅</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/api/trips/{tripId}/generate</code></td><td>AI 동선 생성 요청</td><td>✅</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/api/trips/{tripId}/itinerary</code></td><td>동선 조회</td><td>✅</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/api/trips/{tripId}/itinerary</code></td><td>동선 수동 수정 (2단계)</td><td>✅</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sh3">WebSocket (STOMP) 경로</h3>
+    <div class="ws-block">
+      <div class="ws-comment">// 구독 (Subscribe) — 서버 → 클라이언트</div>
+      <div><span class="ws-path">/topic/trip/{tripId}/votes</span>       <span class="ws-arrow">←</span> <span class="ws-label">투표 현황 실시간 수신</span></div>
+      <div><span class="ws-path">/topic/trip/{tripId}/itinerary</span>   <span class="ws-arrow">←</span> <span class="ws-label">동선 확정 변경 수신</span></div>
+      <div><span class="ws-path">/topic/trip/{tripId}/ai-status</span>   <span class="ws-arrow">←</span> <span class="ws-label">AI 생성 진행률/완료 수신</span></div>
+      <div><span class="ws-path">/topic/trip/{tripId}/members</span>     <span class="ws-arrow">←</span> <span class="ws-label">멤버 합류/퇴장 수신</span></div>
+      <br>
+      <div class="ws-comment">// 발행 (Publish) — 클라이언트 → 서버</div>
+      <div><span class="ws-path">/app/trip/{tripId}/vote</span>          <span class="ws-arrow">→</span> <span class="ws-label">투표 클릭/취소 (토글)</span></div>
+      <div><span class="ws-path">/app/trip/{tripId}/ai-emergency</span>  <span class="ws-arrow">→</span> <span class="ws-label">AI 긴급 우회 트리거 (2단계)</span></div>
+    </div>
+
+    <h3 class="sh3">WebSocket 메시지 페이로드</h3>
+    <pre><code class="language-json">// 투표 발행 (Client → Server)
+{ "itineraryPlaceId": 123, "voteType": "UP" }
+
+// 투표 수신 (Server → All Clients)
+{ "itineraryPlaceId": 123, "upCount": 2, "downCount": 0,
+  "totalMembers": 3, "status": "VOTING" }
+
+// AI 생성 상태 (Server → All Clients)
+{ "step": "NAVER_SEARCH", "progress": 60,
+  "message": "장소를 검색하고 있어요..." }</code></pre>
+  </div>
+
+  <div class="section" id="pkg">
+    <h2 class="sh">Spring Boot 패키지 구조</h2>
+    <pre><code class="language-plaintext">src/main/java/com/wandermap
+├── domain
+│   ├── auth        → AuthController · AuthService · User
+│   ├── trip        → TripController · TripService · Trip · TripMember
+│   ├── preference  → PreferenceController · PreferenceService · Preference
+│   ├── itinerary   → ItineraryController · ItineraryService
+│   │               → RouteOptimizer (Greedy TSP 알고리즘)
+│   ├── vote        → VoteWebSocketController · VoteService · PlaceVote
+│   └── settlement  → SettlementController · SettlementService (2단계)
+│
+├── infrastructure
+│   ├── gemini      → GeminiClient · GeminiPromptLoader  ← .md 프롬프트 분리
+│   ├── naver       → NaverLocalClient · NaverDirectionsClient
+│   └── websocket   → WebSocketConfig · StompInterceptor(JWT) · WebSocketBroadcaster
+│
+└── global
+    ├── config      → SecurityConfig · JwtConfig · RestTemplateConfig
+    ├── exception   → GlobalExceptionHandler · ExternalApiException · ErrorResponse
+    └── util        → JwtUtil
+
+src/main/resources
+├── application.yml · application-local.yml · application-prod.yml
+└── prompts
+    ├── preference-analyze.md   ← Gemini 프롬프트 (코드와 분리, 버전 관리)
+    └── emergency-reroute.md</code></pre>
+  </div>
+</div>
+
+<div class="chapter-divider"></div>
+
+<!-- ═══════════ CHAPTER 3: 프론트엔드 설계 ═══════════ -->
+<div class="chapter">
+  <div class="chapter-header ch-3">
+    <div class="ch-icon">🎨</div>
+    <div>
+      <h1>프론트엔드 설계서</h1>
+      <p>상태 관리 · 라우팅 · WebSocket 훅 · 재연결 정책 · Naver Maps 추상화 · 렌더링 최적화 · Axios</p>
+    </div>
+  </div>
+
+  <div class="section" id="state">
+    <h2 class="sh">글로벌 상태 관리 구조</h2>
+    <div class="callout callout-gray">
+      <strong>원칙</strong> — Zustand: 클라이언트 전역 상태(인증, WS 연결) &nbsp;|&nbsp; TanStack Query: 서버 데이터(동선, 멤버) &nbsp;|&nbsp; 로컬 state: 폼·모달<br>
+      서버 데이터를 Zustand에 넣지 않는다. React Query의 캐싱/재조회/무효화 기능을 활용한다.
+    </div>
+    <h3 class="sh3">Zustand Stores (4개)</h3>
+    <pre><code class="language-typescript">// authStore.ts — 인증 상태
+export const useAuthStore = create&lt;AuthState&gt;()(
+  persist((set) => ({
+    user: null, accessToken: null, isAuthenticated: false,
+    setAuth: (user, accessToken) => set({ user, accessToken, isAuthenticated: true }),
+    clearAuth: () => set({ user: null, accessToken: null, isAuthenticated: false }),
+  }), { name: 'auth-storage' })
+);
+
+// wsStore.ts — WebSocket 연결 상태
+type WsStatus = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING';
+export const useWsStore = create&lt;WsState&gt;((set) => ({
+  status: 'DISCONNECTED', currentTripId: null, retryCount: 0,
+  setStatus: (status) => set({ status }),
+  incrementRetry: () => set((s) => ({ retryCount: s.retryCount + 1 })),
+  resetRetry: () => set({ retryCount: 0 }),
+}));
+
+// voteStore.ts — 실시간 투표 현황
+export const useVoteStore = create&lt;VoteState&gt;((set) => ({
+  votes: {},  // Record&lt;itineraryPlaceId, VoteStatus&gt;
+  updateVote: (placeId, status) =>
+    set((s) => ({ votes: { ...s.votes, [placeId]: status } })),
+  resetVotes: () => set({ votes: {} }),
+}));
+
+// aiStatusStore.ts — AI 생성 진행 상태
+export const useAiStatusStore = create&lt;AiStatusState&gt;((set) => ({
+  isGenerating: false, step: null, progress: 0, message: null,
+  setStatus: (step, progress, message) =>
+    set({ step, progress, message, isGenerating: true }),
+  setGenerating: (isGenerating) => set({ isGenerating }),
+}));</code></pre>
+  </div>
+
+  <div class="section" id="routing">
+    <h2 class="sh">라우팅 &amp; 컴포넌트 트리</h2>
+    <h3 class="sh3">라우팅 구조</h3>
+    <pre><code class="language-plaintext">/                          ← 랜딩 페이지
+/login                     ← 소셜 로그인
+/oauth/callback            ← OAuth 리다이렉트 처리
+/dashboard                 ← 내 여행 목록
+/trips/new                 ← 여행 방 생성
+/trips/:tripId             ← 여행 방 메인 (지도 + 동선)
+/trips/:tripId/preferences ← 개인 선호도 입력
+/trips/:tripId/vote        ← 투표 화면 (모바일 최적화)
+/share/:inviteCode         ← 초대 링크 랜딩
+/view/:tripId              ← 비회원 읽기 전용 공유 (3단계)</code></pre>
+
+    <h3 class="sh3">핵심 컴포넌트 트리</h3>
+    <pre><code class="language-plaintext">TripRoomPage
+├── TripHeader          ← 방 정보, 멤버 아바타
+├── NaverMapView        ← 지도 렌더링 영역
+│   ├── PlaceMarkers    ← 장소 핀 (diff 기반 업데이트)
+│   └── RoutePolyline   ← 동선 경로선
+└── TripSidebar         ← 오른쪽 패널
+    ├── AiStatusPanel   ← AI 생성 진행률 바
+    ├── VotingPanel     ← 투표 중인 장소 카드 목록
+    │   └── VoteCard    ← 장소 정보 + 👍👎 버튼
+    └── ItineraryPanel  ← 확정된 동선 타임라인</code></pre>
+  </div>
+
+  <div class="section" id="ws-hook">
+    <h2 class="sh">useWebSocket 커스텀 훅</h2>
+    <pre><code class="language-typescript">export const useWebSocket = (tripId: string) => {
+  const clientRef = useRef&lt;Client | null&gt;(null);
+  const { setStatus, resetRetry } = useWsStore();
+  const { updateVote } = useVoteStore();
+  const { setStatus: setAiStatus, setGenerating } = useAiStatusStore();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const client = new Client({
+      webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL}/ws`),
+      connectHeaders: { Authorization: `Bearer ${useAuthStore.getState().accessToken}` },
+
+      onConnect: () => {
+        setStatus('CONNECTED');
+        resetRetry();
+
+        // ① 투표 현황 구독
+        client.subscribe(`/topic/trip/${tripId}/votes`, (msg) => {
+          const data = JSON.parse(msg.body);
+          updateVote(data.itineraryPlaceId, data);
+        });
+
+        // ② 동선 확정 변경 → React Query 자동 재조회
+        client.subscribe(`/topic/trip/${tripId}/itinerary`, () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.itinerary(tripId) });
+        });
+
+        // ③ AI 생성 상태 구독
+        client.subscribe(`/topic/trip/${tripId}/ai-status`, (msg) => {
+          const data = JSON.parse(msg.body);
+          if (data.step === 'COMPLETE') {
+            setGenerating(false);
+            queryClient.invalidateQueries({ queryKey: queryKeys.itinerary(tripId) });
+          } else {
+            setAiStatus(data.step, data.progress, data.message);
+          }
+        });
+
+        // ④ 멤버 변경 구독
+        client.subscribe(`/topic/trip/${tripId}/members`, () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.tripMembers(tripId) });
+        });
+      },
+    });
+
+    client.activate();
+    clientRef.current = client;
+    return () => client.deactivate();
+  }, [tripId]);
+
+  const publishVote = useCallback((itineraryPlaceId: number, voteType: 'UP' | 'DOWN') => {
+    clientRef.current?.publish({
+      destination: `/app/trip/${tripId}/vote`,
+      body: JSON.stringify({ itineraryPlaceId, voteType }),
+    });
+  }, [tripId]);
+
+  return { publishVote };
+};</code></pre>
+  </div>
+
+  <div class="section" id="ws-reconnect">
+    <h2 class="sh">WebSocket 재연결 정책</h2>
+    <div class="callout callout-blue">지수 백오프(Exponential Backoff) — 2초 → 4초 → 8초 순서로 재시도. 3회 초과 시 수동 새로고침 안내.</div>
+    <pre><code class="language-typescript">const MAX_RETRY = 3;
+const BASE_DELAY_MS = 2000;
+
+export const useWebSocketReconnect = (connect: () => void) => {
+  const { retryCount, incrementRetry, setStatus } = useWsStore();
+
+  const scheduleReconnect = useCallback(() => {
+    if (retryCount >= MAX_RETRY) {
+      setStatus('DISCONNECTED');
+      toast.error('서버 연결이 끊어졌습니다. 페이지를 새로고침 해주세요.');
+      return;
+    }
+    const delay = BASE_DELAY_MS * Math.pow(2, retryCount); // 2s → 4s → 8s
+    setStatus('RECONNECTING');
+    setTimeout(() => { incrementRetry(); connect(); }, delay);
+  }, [retryCount, connect]);
+
+  return { scheduleReconnect };
+};
+
+// 재연결 성공 후 상태 복구
+onConnect: () => {
+  setStatus('CONNECTED');
+  resetRetry();
+  subscribeAll(tripId);  // 구독 재등록
+  // 끊긴 동안 놓친 이벤트 보완
+  queryClient.invalidateQueries({ queryKey: queryKeys.itinerary(tripId) });
+  queryClient.invalidateQueries({ queryKey: queryKeys.tripMembers(tripId) });
+}</code></pre>
+  </div>
+
+  <div class="section" id="naver-maps">
+    <h2 class="sh">Naver Maps API 컴포넌트 추상화</h2>
+    <h3 class="sh3">SDK 로딩 훅</h3>
+    <pre><code class="language-typescript">export const useNaverMaps = () => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  useEffect(() => {
+    if (window.naver?.maps) { setIsLoaded(true); return; }
+    const check = setInterval(() => {
+      if (window.naver?.maps) { setIsLoaded(true); clearInterval(check); }
+    }, 100);
+    return () => clearInterval(check);
+  }, []);
+  return { isLoaded };
+};</code></pre>
+
+    <h3 class="sh3">PlaceMarkers — diff 기반 마커 관리</h3>
+    <pre><code class="language-typescript">// 마커는 naver.maps.Marker 인스턴스를 useRef로 직접 관리
+// React 렌더링 사이클과 분리 → 불필요한 마커 재생성 방지
+export const PlaceMarkers = ({ map, places, onPlaceClick }) => {
+  const markersRef = useRef&lt;Map&lt;number, naver.maps.Marker&gt;&gt;(new Map());
+
+  useEffect(() => {
+    const currentIds = new Set(places.map((p) => p.id));
+
+    // 제거된 장소의 마커만 삭제
+    markersRef.current.forEach((marker, id) => {
+      if (!currentIds.has(id)) { marker.setMap(null); markersRef.current.delete(id); }
+    });
+
+    // 새 장소 마커 추가 (기존은 아이콘만 업데이트)
+    places.forEach((place, index) => {
+      if (markersRef.current.has(place.id)) {
+        updateMarkerIcon(markersRef.current.get(place.id)!, place, index);
+        return;
+      }
+      const marker = new naver.maps.Marker({
+        map, position: new naver.maps.LatLng(place.latitude, place.longitude),
+        icon: createMarkerIcon(index + 1, place.status),
+      });
+      markersRef.current.set(place.id, marker);
+    });
+  }, [places, map]);
+
+  return null;
+};</code></pre>
+  </div>
+
+  <div class="section" id="render-opt">
+    <h2 class="sh">렌더링 최적화 전략</h2>
+    <div class="callout callout-amber"><strong>문제</strong> — 투표 WebSocket 이벤트마다 voteStore가 업데이트되면 지도 컴포넌트가 불필요하게 리렌더링됨</div>
+    <pre><code class="language-typescript">// 해결: 구독 분리 + memo
+
+// 투표 패널은 voteStore만 구독 (지도와 무관)
+const VotingPanel = memo(() => {
+  const votes = useVoteStore((s) => s.votes);
+  // ...
+});
+
+// 지도는 itinerary 쿼리만 구독 (투표 이벤트에 반응 안 함)
+const NaverMapView = memo(() => {
+  const { data: itinerary } = useQuery({ queryKey: queryKeys.itinerary(tripId) });
+  // ...
+});
+
+// PlaceMarkers: diff 기반 업데이트
+// → 장소 추가/삭제 시 전체 재생성이 아닌 변경된 마커만 업데이트
+// → 투표 상태 변경은 마커 아이콘 색상만 교체 (위치/맵 재설정 없음)</code></pre>
+  </div>
+
+  <div class="section" id="axios">
+    <h2 class="sh">Axios 인터셉터 설계</h2>
+    <pre><code class="language-typescript">const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  timeout: 10000,
+});
+
+// 요청 인터셉터 — JWT 자동 첨부
+apiClient.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// 응답 인터셉터 — 토큰 만료 자동 갱신
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      try {
+        const { data } = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+        useAuthStore.getState().setAuth(data.user, data.accessToken);
+        original.headers.Authorization = `Bearer ${data.accessToken}`;
+        return apiClient(original);  // 원래 요청 재시도
+      } catch {
+        useAuthStore.getState().clearAuth();
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);</code></pre>
+  </div>
+
+  <div class="section" id="folder">
+    <h2 class="sh">프로젝트 폴더 구조</h2>
+    <pre><code class="language-plaintext">src/
+├── assets/
+├── components/
+│   ├── ui/           ← Button · Input · Badge · Modal · Toast · Skeleton
+│   ├── map/          ← NaverMap · PlaceMarkers · RoutePolyline
+│   ├── trip/         ← MemberAvatar · StatusBadge · TripCard
+│   ├── vote/         ← VoteCard · VotingPanel · VoteButton
+│   └── auth/         ← ProtectedRoute
+├── hooks/
+│   ├── useNaverMaps.ts
+│   ├── useWebSocket.ts
+│   ├── useWebSocketReconnect.ts
+│   └── useTrip.ts           ← TanStack Query 훅 모음
+├── lib/
+│   ├── apiClient.ts         ← Axios + 인터셉터
+│   └── queryClient.ts
+├── pages/
+│   ├── LandingPage.tsx
+│   ├── LoginPage.tsx
+│   ├── OAuthCallbackPage.tsx
+│   ├── DashboardPage.tsx
+│   ├── TripCreatePage.tsx
+│   ├── TripRoomPage.tsx
+│   ├── PreferencePage.tsx
+│   └── ShareLandingPage.tsx
+├── store/
+│   ├── authStore.ts
+│   ├── wsStore.ts
+│   ├── voteStore.ts
+│   └── aiStatusStore.ts
+├── types/
+│   └── trip.ts · itinerary.ts · vote.ts · user.ts
+├── constants/
+│   ├── queryKeys.ts
+│   └── wsEndpoints.ts
+└── utils/
+    ├── mapHelpers.ts
+    └── dateHelpers.ts</code></pre>
+  </div>
+</div>
+
+<div class="chapter-divider"></div>
+
+<!-- ═══════════ CHAPTER 4: 추가 기능 ═══════════ -->
+<div class="chapter">
+  <div class="chapter-header ch-4">
+    <div class="ch-icon">💡</div>
+    <div>
+      <h1>추가 기능 아이디어</h1>
+      <p>MVP 이후 반영 예정 — 7가지 기능 상세 설계</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div id="addon1" class="addon-card">
+      <h3><span class="addon-num">1</span>스마트 장소 스크랩 (찜 기능)</h3>
+      <p>선호도 설문 이전 단계에서 멤버들이 SNS에서 발견한 장소를 미리 스크랩. AI 동선 생성 시 스크랩 장소를 우선 반영. 단순 찜을 넘어 AI 인풋 데이터로 직접 연결.</p>
+      <pre><code class="language-sql">CREATE TABLE wish_places (
+    id         BIGSERIAL PRIMARY KEY,
+    trip_id    BIGINT REFERENCES trips(id) ON DELETE CASCADE,
+    user_id    BIGINT REFERENCES users(id),
+    place_id   BIGINT REFERENCES places(id),
+    memo       VARCHAR(200),
+    created_at TIMESTAMP DEFAULT NOW()
+);</code></pre>
+      <div class="addon-point">✦ 핵심 포인트 — 찜 기능이 단독으로 끝나지 않고, Gemini 프롬프트 인풋으로 직접 연결되어 AI가 찜 장소 행정동을 동선에 필수 포함</div>
+    </div>
+
+    <div id="addon2" class="addon-card">
+      <h3><span class="addon-num">2</span>여행 후기 &amp; 타임라인 공유</h3>
+      <p>여행 완료 후 확정된 itinerary_places 기반으로 자동 타임라인 생성. html2canvas로 "Day 1 동선 카드"를 PNG로 내보내기. 카카오톡 OG 태그 최적화로 링크 미리보기 지원.</p>
+      <pre><code class="language-typescript">const exportTripCard = async (element: HTMLElement) => {
+  const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+  const link = document.createElement('a');
+  link.download = 'wandermap-trip.png';
+  link.href = canvas.toDataURL();
+  link.click();
+};</code></pre>
+      <div class="addon-point">✦ 핵심 포인트 — 여행 후 자동 생성되는 "인스타 스토리용 카드"가 바이럴 공유 채널로 기능</div>
+    </div>
+
+    <div id="addon3" class="addon-card">
+      <h3><span class="addon-num">3</span>날씨 기반 동선 재조정</h3>
+      <p>OpenWeather API 연동. 여행 전날 밤 예보 조회 → 비/눈 예보 시 알림 → 수락 시 AI 긴급 우회 흐름으로 실내 장소 위주 재탐색. 월 1,000건 무료 (5일 예보, 3시간 간격).</p>
+      <pre><code class="language-json">// Gemini 프롬프트 추가 인풋
+{
+  "weather": { "condition": "Rain", "temperature": 18 },
+  "preference": "실내 장소 우선, 카페·박물관·실내 쇼핑 위주"
+}</code></pre>
+      <div class="addon-point">✦ 주의 — 스케줄러 구현 필요 (@Scheduled). 여행 1~3일 전부터 예보 조회.</div>
+    </div>
+
+    <div id="addon4" class="addon-card">
+      <h3><span class="addon-num">4</span>예산 관리 고도화 — 최소 송금 알고리즘</h3>
+      <p>단순 1/N을 넘어 Greedy 알고리즘으로 최소 송금 횟수 계산. 5명 10건 지출을 최소 이체 횟수로 정산. 카카오페이 딥링크로 바로 송금 화면 이동.</p>
+      <pre><code class="language-java">public List&lt;TransferDTO&gt; optimizeTransfers(Map&lt;Long, Long&gt; balances) {
+    PriorityQueue creditors = ...; // 많이 받을 사람 우선
+    PriorityQueue debtors = ...;   // 많이 줄 사람 우선
+    while (!creditors.isEmpty() && !debtors.isEmpty()) {
+        var amount = Math.min(creditor.getValue(), -debtor.getValue());
+        transfers.add(new TransferDTO(debtor, creditor, amount));
+    }
+    return transfers;
+}</code></pre>
+      <div class="addon-point">✦ 핵심 포인트 — "최소 이체 횟수" 정산은 기존 정산 앱과의 차별점. 영수증 사진 OCR(Gemini Vision, 3단계) 연동 시 지출 입력 자동화 가능.</div>
+    </div>
+
+    <div id="addon5" class="addon-card">
+      <h3><span class="addon-num">5</span>멤버 역할 분담 시스템</h3>
+      <p>여행 준비 역할("숙소 예약", "렌터카 예약")을 멤버에게 할당하고 완료 여부 추적. 완료 체크 시 WebSocket으로 전체 멤버에게 알림.</p>
+      <pre><code class="language-sql">CREATE TABLE trip_tasks (
+    id          BIGSERIAL PRIMARY KEY,
+    trip_id     BIGINT REFERENCES trips(id) ON DELETE CASCADE,
+    title       VARCHAR(200) NOT NULL,
+    assigned_to BIGINT REFERENCES users(id),
+    is_done     BOOLEAN DEFAULT FALSE,
+    due_date    DATE
+);</code></pre>
+      <div class="addon-point">✦ 구현 난이도 낮음 — 작은 공수로 실용적인 기능 추가 가능. 2단계 초반에 바로 붙이기 좋음.</div>
+    </div>
+
+    <div id="addon6" class="addon-card">
+      <h3><span class="addon-num">6</span>AI 긴급 우회 고도화</h3>
+      <p>단순 대체 장소 제안을 넘어, 교착 상태의 원인(선호도 충돌)을 Gemini가 분석하고 양쪽 모두에게 적합한 절충안을 제시하는 중재 기능.</p>
+      <pre><code class="language-plaintext">// conflict-mediation.md 프롬프트
+찬성한 멤버 선호도: {{up_voters_preferences}}
+반대한 멤버 선호도: {{down_voters_preferences}}
+
+출력:
+{
+  "conflict_reason": "충돌 이유 한 줄",
+  "alternative_suggestions": [
+    { "category": "카테고리", "reason": "왜 양쪽 모두 적합한지" }
+  ]
+}</code></pre>
+      <div class="addon-point">✦ 핵심 포인트 — "AI가 갈등을 중재한다"는 포인트가 면접·발표에서 강한 임팩트. 기술보다 UX 시나리오 설계 능력 어필.</div>
+    </div>
+
+    <div id="addon7" class="addon-card">
+      <h3><span class="addon-num">7</span>여행 방 템플릿 저장 &amp; 재사용</h3>
+      <p>완료된 여행의 동선을 템플릿으로 저장, 새 여행 방 생성 시 재사용. "우리 저번 부산 여행처럼 짜줘"를 실제로 구현.</p>
+      <pre><code class="language-sql">CREATE TABLE trip_templates (
+    id          BIGSERIAL PRIMARY KEY,
+    created_by  BIGINT REFERENCES users(id),
+    title       VARCHAR(100),
+    destination VARCHAR(50),
+    days        INT,
+    snapshot    JSONB,
+    is_public   BOOLEAN DEFAULT FALSE,
+    use_count   INT DEFAULT 0
+);</code></pre>
+      <div class="addon-point">✦ 장기 확장 — is_public = TRUE 템플릿을 모아 "인기 여행 코스 마켓플레이스"로 발전 가능.</div>
+    </div>
+
+    <h3 class="sh3">우선순위 정리</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>기능</th><th>구현 난이도</th><th>사용자 임팩트</th><th>권장 단계</th></tr></thead>
+        <tbody>
+          <tr><td>스마트 장소 스크랩</td><td>중</td><td>높음</td><td><span class="badge badge-blue">2단계</span></td></tr>
+          <tr><td>여행 후기 공유 카드</td><td>하</td><td>높음</td><td><span class="badge badge-blue">2단계</span></td></tr>
+          <tr><td>AI 긴급 우회 고도화</td><td>중</td><td>중간</td><td><span class="badge badge-blue">2단계</span></td></tr>
+          <tr><td>멤버 역할 분담</td><td>하</td><td>중간</td><td><span class="badge badge-blue">2단계</span></td></tr>
+          <tr><td>날씨 기반 재조정</td><td>중</td><td>중간</td><td><span class="badge badge-purple">3단계</span></td></tr>
+          <tr><td>예산 관리 고도화</td><td>중</td><td>높음</td><td><span class="badge badge-purple">3단계</span></td></tr>
+          <tr><td>이미지 카드 내보내기</td><td>중</td><td>높음</td><td><span class="badge badge-purple">3단계</span></td></tr>
+          <tr><td>여행 방 템플릿</td><td>높음</td><td>중간</td><td><span class="badge badge-purple">3단계</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+hljs.highlightAll();
+
+const links = document.querySelectorAll('.nav-link');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-5% 0px -85% 0px' });
+
+document.querySelectorAll('[id]').forEach(el => {
+  if ([...links].some(l => l.getAttribute('href') === `#${el.id}`)) {
+    observer.observe(el);
+  }
+});
+</script>
+</body>
+</html>
+HTMLEOF
