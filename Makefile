@@ -6,7 +6,7 @@ front:
 
 # 백엔드 실행
 back:
-	cd backend && ./gradlew bootRun
+	cd backend && gradlew bootRun
 
 # 데이터베이스 및 레디스 기동
 db:
