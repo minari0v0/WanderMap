@@ -1,244 +1,108 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { tripService } from "@/lib/trip-service"
-import { Calendar, MapPin, Plus, Share2, Compass, ArrowRight } from "lucide-react"
+import { Compass, ArrowRight, CheckCircle2, Map, Users, Sparkles } from "lucide-react"
 
 export default function HomePage() {
   const router = useRouter()
-  
-  // 방 생성 입력 상태
-  const [title, setTitle] = useState("")
-  const [destination, setDestination] = useState("도쿄")
-  const [startDate, setStartDate] = useState("2026-10-24")
-  const [endDate, setEndDate] = useState("2026-10-27")
-  
-  // 초대코드 입장 상태
-  const [inviteCodeInput, setInviteCodeInput] = useState("")
-  
-  // 방 생성 완료 후 결과 상태
-  const [createdTrip, setCreatedTrip] = useState<{
-    id: number
-    inviteCode: string
-    title: string
-  } | null>(null)
-  
-  const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
-
-  // 방 생성 요청
-  async function handleCreateRoom(e: React.FormEvent) {
-    e.preventDefault()
-    if (!title.trim() || !destination.trim() || !startDate || !endDate) {
-      setErrorMessage("모든 정보를 올바르게 입력해주세요.")
-      return
-    }
-    
-    setIsLoading(true)
-    setErrorMessage("")
-    
-    try {
-      const response = await tripService.createTrip({
-        title,
-        destination,
-        startDate,
-        endDate,
-        userId: 1, // 임시 테스터 ID
-      })
-      setCreatedTrip(response)
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || "방 생성 도중 오류가 발생했습니다.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 초대 코드로 방 입장
-  async function handleJoinRoom(e: React.FormEvent) {
-    e.preventDefault()
-    if (!inviteCodeInput.trim()) {
-      setErrorMessage("초대 코드를 입력해주세요.")
-      return
-    }
-
-    setIsLoading(true)
-    setErrorMessage("")
-
-    try {
-      const response = await tripService.joinTrip(inviteCodeInput.trim(), 1)
-      router.push(`/trips/${response.id}`)
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || "초대 코드가 올바르지 않거나 합류할 수 없습니다.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 초대 링크 복사
-  function copyInviteLink() {
-    if (!createdTrip) return
-    const link = `${window.location.origin}/join/${createdTrip.inviteCode}`
-    navigator.clipboard.writeText(link)
-    alert("초대 링크가 클립보드에 복사되었습니다!")
-  }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-teal-50/50 via-slate-50 to-slate-100 p-4 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-dvh bg-[#F8F8F6] text-[#18181B] flex flex-col font-sans">
+      
+      {/* 상단 미니 헤더 */}
+      <header className="max-w-5xl w-full mx-auto px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm shadow-[#1A9E7A]/10">
+            <Compass className="size-4.5" />
+          </span>
+          <span className="text-lg font-bold tracking-tight text-[#18181B]">WanderMap</span>
+        </div>
         
-        {/* 로고 영역 */}
-        <div className="text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-500 text-white shadow-lg shadow-teal-500/20">
-            <Compass className="h-6 w-6 animate-pulse" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">WanderMap</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            실시간으로 조율하고 AI가 정리하는 우리들만의 여행 플래너
+        <button 
+          onClick={() => router.push("/login")}
+          className="rounded-xl border border-[#E2E2DA] bg-white px-4 py-2 text-xs font-semibold hover:bg-slate-50 transition"
+        >
+          로그인
+        </button>
+      </header>
+
+      {/* 히어로 섹션 */}
+      <main className="flex-1 max-w-4xl w-full mx-auto px-6 flex flex-col items-center justify-center text-center py-16 md:py-24 space-y-8">
+        
+        {/* 문구 */}
+        <div className="space-y-4">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EDFAF4] px-3 py-1 text-xs font-bold text-[#1A9E7A]">
+            <Sparkles className="size-3.5" /> 2026년형 새로운 여행 협업 경험
+          </span>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight max-w-2xl text-[#18181B]">
+            엑셀로 싸우던 여행 계획,<br />
+            이제 지도를 보며 함께 결정해요.
+          </h1>
+          <p className="text-sm md:text-base text-[#6B6B72] max-w-md mx-auto leading-relaxed">
+            친구들과 동시에 실시간 장소 투표를 진행하고,<br />
+            AI가 환각 없이 실제 데이터를 매핑하여 최적의 동선을 완성해 드립니다.
           </p>
         </div>
 
-        {errorMessage && (
-          <div className="rounded-lg bg-red-50 p-3 text-xs font-medium text-red-600 dark:bg-red-950/30 dark:text-red-400">
-            ⚠ {errorMessage}
+        {/* 액션 버튼 */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <button
+            onClick={() => router.push("/login")}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-[#1A9E7A] px-7 py-4 text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/10"
+          >
+            3초 만에 시작하기 <ArrowRight className="size-4" />
+          </button>
+          
+          <button
+            onClick={() => router.push("/trips/view/999")}
+            className="rounded-xl border border-[#E2E2DA] bg-white px-7 py-4 text-sm font-bold hover:bg-slate-50 transition"
+          >
+            데모 일정 구경하기
+          </button>
+        </div>
+
+        {/* 핵심 가치 요약 */}
+        <div className="grid gap-4 md:grid-cols-3 w-full pt-12">
+          
+          <div className="rounded-2xl border border-[#E2E2DA] bg-white p-6 text-left shadow-sm space-y-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EDFAF4] text-[#1A9E7A] mb-2">
+              <Users className="size-5" />
+            </div>
+            <h3 className="font-bold text-sm text-[#18181B]">실시간 그룹 투표</h3>
+            <p className="text-xs text-[#6B6B72] leading-relaxed">
+              의견 대립은 이제 그만. 실시간 찬반 투표를 통해 멤버 과반수가 찬성하면 즉시 일정이 지도에 핀으로 연결됩니다.
+            </p>
           </div>
-        )}
 
-        {/* 1. 방 생성 완료 화면 */}
-        {createdTrip ? (
-          <div className="rounded-2xl border border-teal-100 bg-white p-6 shadow-xl shadow-teal-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none space-y-6 animate-in fade-in zoom-in-95 duration-200">
-            <div className="text-center space-y-2">
-              <span className="inline-flex items-center rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-700 dark:bg-teal-950/50 dark:text-teal-400">
-                🎉 생성 완료
-              </span>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">"{createdTrip.title}" 방이 생성되었습니다!</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">초대 링크를 카카오톡 또는 문자로 멤버들에게 공유하세요.</p>
+          <div className="rounded-2xl border border-[#E2E2DA] bg-white p-6 text-left shadow-sm space-y-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EDFAF4] text-[#1A9E7A] mb-2">
+              <Map className="size-5" />
             </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-lg bg-slate-50 p-3 border border-slate-100 dark:bg-slate-950 dark:border-slate-800 text-sm font-mono text-slate-700 dark:text-slate-300">
-                <span className="truncate mr-2">{window.location.origin}/join/{createdTrip.inviteCode}</span>
-                <button 
-                  onClick={copyInviteLink}
-                  className="flex-shrink-0 flex items-center gap-1 rounded bg-teal-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-600 transition"
-                >
-                  <Share2 className="h-3 w-3" /> 복사
-                </button>
-              </div>
-
-              <button
-                onClick={() => router.push(`/trips/${createdTrip.id}`)}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition dark:bg-teal-500 dark:hover:bg-teal-600"
-              >
-                여행 방 입장하기 <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
+            <h3 className="font-bold text-sm text-[#18181B]">환각 없는 AI 동선</h3>
+            <p className="text-xs text-[#6B6B72] leading-relaxed">
+              Gemini로 멤버들의 취향 의도만 영리하게 구조화한 후, 실제 장소 검색과 거리 이동 연산은 네이버 API 실데이터로 연결합니다.
+            </p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            
-            {/* 2. 새 여행 생성 폼 */}
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-xl shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none space-y-4">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <Plus className="h-4 w-4 text-teal-500" /> 새 여행 방 만들기
-              </h2>
-              
-              <form onSubmit={handleCreateRoom} className="space-y-3 text-slate-800 dark:text-slate-100">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">여행 이름</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="도쿄 식도락 여행 ✈"
-                    className="w-full rounded-xl border border-slate-200 bg-transparent px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 transition dark:border-slate-800"
-                    required
-                  />
-                </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">목적지</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      placeholder="일본 도쿄"
-                      className="w-full rounded-xl border border-slate-200 bg-transparent pl-10 pr-3.5 py-2.5 text-sm outline-none focus:border-teal-500 transition dark:border-slate-800"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">출발일</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-transparent pl-10 pr-3.5 py-2.5 text-sm outline-none focus:border-teal-500 transition dark:border-slate-800"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">도착일</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                      <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-transparent pl-10 pr-3.5 py-2.5 text-sm outline-none focus:border-teal-500 transition dark:border-slate-800"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full mt-2 rounded-xl bg-teal-500 py-3 text-sm font-semibold text-white hover:bg-teal-600 transition disabled:opacity-55"
-                >
-                  {isLoading ? "생성 중..." : "방 생성 + 초대 링크 발급"}
-                </button>
-              </form>
+          <div className="rounded-2xl border border-[#E2E2DA] bg-white p-6 text-left shadow-sm space-y-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EDFAF4] text-[#1A9E7A] mb-2">
+              <CheckCircle2 className="size-5" />
             </div>
-
-            {/* 3. 기존 방 입장 폼 */}
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-xl shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none space-y-4">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <Compass className="h-4 w-4 text-teal-500" /> 이미 방이 있으신가요?
-              </h2>
-
-              <form onSubmit={handleJoinRoom} className="flex gap-2">
-                <input
-                  type="text"
-                  value={inviteCodeInput}
-                  onChange={(e) => setInviteCodeInput(e.target.value)}
-                  placeholder="초대 코드 (UUID) 입력"
-                  className="flex-1 rounded-xl border border-slate-200 bg-transparent px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 transition dark:border-slate-800 text-slate-800 dark:text-white"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800 transition dark:bg-teal-500 dark:hover:bg-teal-600 disabled:opacity-55"
-                >
-                  입장
-                </button>
-              </form>
-            </div>
-
+            <h3 className="font-bold text-sm text-[#18181B]">비회원 관람 뷰어</h3>
+            <p className="text-xs text-[#6B6B72] leading-relaxed">
+              로그인하지 않아도 최종 완성된 우리들의 여행 코스를 멋지게 시각화된 전용 페이지 링크로 누구나 간편하게 볼 수 있습니다.
+            </p>
           </div>
-        )}
 
-      </div>
+        </div>
+
+      </main>
+
+      {/* 푸터 */}
+      <footer className="border-t border-[#E2E2DA] bg-white/50 py-8 text-center text-xs text-[#6B6B72] backdrop-blur-sm mt-16">
+        <p>© 2026 WanderMap. All rights reserved.</p>
+      </footer>
+
     </div>
   )
 }

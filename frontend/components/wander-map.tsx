@@ -9,9 +9,10 @@ import { tripService, type TripResponse } from "@/lib/trip-service"
 
 interface WanderMapProps {
   tripId: string
+  readOnly?: boolean
 }
 
-export function WanderMap({ tripId }: WanderMapProps) {
+export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
   const [trip, setTrip] = useState<TripResponse | null>(null)
   const [places, setPlaces] = useState<Place[]>(INITIAL_PLACES)
   const [activeId, setActiveId] = useState<string | null>("p2")
@@ -37,6 +38,7 @@ export function WanderMap({ tripId }: WanderMapProps) {
   }, [tripId])
 
   function handleVote(id: string, dir: "up" | "down") {
+    if (readOnly) return // 관람 모드 방어 코드
     setPlaces((prev) =>
       prev.map((p) =>
         p.id === id
@@ -53,9 +55,9 @@ export function WanderMap({ tripId }: WanderMapProps) {
 
   if (loading) {
     return (
-      <div className="flex h-dvh items-center justify-center bg-background text-slate-500">
+      <div className="flex h-dvh items-center justify-center bg-[#F8F8F6] text-slate-500">
         <div className="text-center space-y-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-500 border-t-transparent mx-auto"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1A9E7A] border-t-transparent mx-auto"></div>
           <p className="text-sm font-medium">여행 방 정보를 불러오는 중...</p>
         </div>
       </div>
@@ -64,7 +66,7 @@ export function WanderMap({ tripId }: WanderMapProps) {
 
   if (error || !trip) {
     return (
-      <div className="flex h-dvh items-center justify-center bg-background text-red-500 p-4">
+      <div className="flex h-dvh items-center justify-center bg-[#F8F8F6] text-red-500 p-4">
         <div className="text-center max-w-sm space-y-4">
           <h2 className="text-xl font-bold">오류 발생</h2>
           <p className="text-sm">{error || "여행 방을 찾을 수 없습니다."}</p>
@@ -80,19 +82,21 @@ export function WanderMap({ tripId }: WanderMapProps) {
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-[#F8F8F6]">
       <TopNav 
         tripTitle={trip.title} 
         inviteCode={trip.inviteCode} 
-        members={[{ initial: trip.createdByName.charAt(0), tone: "bg-teal-100 text-teal-800" }]}
+        members={[{ initial: trip.createdByName.charAt(0), tone: "bg-[#EDFAF4] text-[#1A9E7A]" }]}
+        readOnly={readOnly}
       />
-      <main className="grid flex-1 gap-3 overflow-hidden p-3 lg:grid-cols-[1fr_380px]">
+      <main className="grid flex-1 gap-3 overflow-hidden p-3 lg:grid-cols-[1fr_380px] bg-[#F8F8F6]">
         <MapView places={places} activeId={activeId} onSelect={setActiveId} />
         <ItineraryPanel
           places={places}
           activeId={activeId}
           onSelect={setActiveId}
           onVote={handleVote}
+          readOnly={readOnly}
         />
       </main>
     </div>
