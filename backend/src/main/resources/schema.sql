@@ -97,3 +97,18 @@ CREATE INDEX IF NOT EXISTS idx_itinerary_days_trip_id         ON itinerary_days(
 CREATE INDEX IF NOT EXISTS idx_itinerary_places_day_id        ON itinerary_places(day_id);
 CREATE INDEX IF NOT EXISTS idx_place_votes_itinerary_place_id ON place_votes(itinerary_place_id);
 CREATE INDEX IF NOT EXISTS idx_trips_invite_code              ON trips(invite_code);
+
+-- -----------------------------------------------------
+-- 초기 데모용 데이터 적재 (초기 로딩 시 에러 방지)
+-- -----------------------------------------------------
+INSERT INTO users (id, email, nickname, profile_image, provider, oauth_id)
+VALUES (1, 'test@wandermap.io', '테스터', '', 'LOCAL', 'mock-oauth-id')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO trips (id, invite_code, title, destination, start_date, end_date, status, created_by)
+VALUES (999, 'demo-invite-code-1', '제주도 동쪽 2박 3일 힐링 코스 🌴', '제주특별자치도', '2026-08-15', '2026-08-18', 'PLANNING', 1)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO trip_members (id, trip_id, user_id, role)
+VALUES (999, 999, 1, 'OWNER')
+ON CONFLICT (id) DO NOTHING;
