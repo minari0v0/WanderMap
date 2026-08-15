@@ -3,6 +3,7 @@
 import { MapPin, MessageCircle, Sparkles, ThumbsDown, ThumbsUp, Compass } from "lucide-react"
 import { useState } from "react"
 import { TRIP, type Place } from "@/lib/trip-data"
+import { Badge } from "@/components/ui/badge"
 
 export function ItineraryPanel({
   places,
@@ -25,10 +26,7 @@ export function ItineraryPanel({
       {/* header */}
       <div className="flex items-center justify-between gap-2 border-b border-[#E2E2DA] px-4 py-3.5">
         <h2 className="flex items-center gap-2 text-sm font-bold">
-          <span className="relative flex size-2.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400/60" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-red-500" />
-          </span>
+          <span className="size-2 rounded-full bg-red-500" />
           실시간 동선 조율
         </h2>
         
@@ -108,7 +106,7 @@ function PlaceCard({
         active
           ? "border-[#1A9E7A] bg-[#EDFAF4] shadow-sm"
           : isVoting
-            ? "border-amber-200 bg-amber-50/30"
+            ? "border-[#F3E2B8] bg-[#FFFBF0]/60"
             : "border-[#E2E2DA] bg-white hover:bg-slate-50"
       }`}
     >
@@ -116,7 +114,7 @@ function PlaceCard({
         <span
           className={`mt-0.5 flex size-5.5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
             isVoting 
-              ? "bg-amber-100 text-amber-800" 
+              ? "bg-[#FFF8E7] text-[#9A6B00]" 
               : active
                 ? "bg-[#1A9E7A] text-white"
                 : "bg-slate-100 text-slate-700"
@@ -128,13 +126,9 @@ function PlaceCard({
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] font-bold text-[#6B6B72]">{place.category}</span>
             {isVoting ? (
-              <span className="shrink-0 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
-                투표 진행 중
-              </span>
+              <Badge variant="voting">투표 진행 중</Badge>
             ) : (
-              <span className="shrink-0 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
-                확정됨
-              </span>
+              <Badge variant="confirmed">확정됨</Badge>
             )}
           </div>
           <p className="mt-0.5 truncate font-bold text-sm text-[#18181B]">{place.name}</p>
