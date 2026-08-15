@@ -86,6 +86,7 @@ export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
       <TopNav 
         tripTitle={trip.title} 
         inviteCode={trip.inviteCode} 
+        tripId={tripId}
         members={[{ initial: trip.createdByName.charAt(0), tone: "bg-[#EDFAF4] text-[#1A9E7A]" }]}
         readOnly={readOnly}
       />

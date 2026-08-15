@@ -8,11 +8,12 @@ import { TRIP } from "@/lib/trip-data"
 interface TopNavProps {
   tripTitle?: string
   inviteCode?: string
+  tripId?: string
   members?: { initial: string; tone: string }[]
   readOnly?: boolean
 }
 
-export function TopNav({ tripTitle, inviteCode, members, readOnly }: TopNavProps) {
+export function TopNav({ tripTitle, inviteCode, tripId, members, readOnly }: TopNavProps) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
 
@@ -69,6 +70,16 @@ export function TopNav({ tripTitle, inviteCode, members, readOnly }: TopNavProps
 
         {/* 액션 버튼 */}
         <div className="flex items-center gap-2">
+          {!readOnly && tripId && (
+            <button
+              onClick={() => router.push(`/trips/${tripId}/preferences`)}
+              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-[#b8eedf] bg-[#EDFAF4] px-3 py-2 text-xs font-semibold text-[#1A9E7A] hover:bg-[#d8f5eb] transition"
+              title="취향 설문 작성하기"
+            >
+              <span>📋 취향 설문</span>
+            </button>
+          )}
+
           {!readOnly && (
             <button
               onClick={() => router.push("/dashboard")}
