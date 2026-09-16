@@ -28,8 +28,16 @@ export default function MyPage() {
   const [isInitializing, setIsInitializing] = useState(true)
 
   const [activeTab, setActiveTab] = useState<"account" | "notifications">("account")
-  const [isLoading, setIsLoading] = useState(false)
-  const [toastMsg, setToastMsg] = useState<string | null>(null)
+  
+  // 독립적인 로딩 상태 분리 (버튼 간 간섭/깜빡임 방지)
+  const [isEmailSending, setIsEmailSending] = useState(false)
+  const [isOtpVerifying, setIsOtpVerifying] = useState(false)
+  const [isPasswordChanging, setIsPasswordChanging] = useState(false)
+  const [isProfileUpdating, setIsProfileUpdating] = useState(false)
+
+  // 부드러운 불투명도(0 -> 100 -> 0) 트랜지션 토스트 상태
+  const [toast, setToast] = useState<{ msg: string; visible: boolean } | null>(null)
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 1. 프로필 수정 모달 상태
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
@@ -102,9 +110,18 @@ export default function MyPage() {
     return () => clearInterval(cooldownInterval)
   }, [resendCooldown])
 
+  const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,20}$/
+
+  // 부드러운 불투명도(0 -> 100 -> 0) 트랜지션 토스트 함수
   function showToast(msg: string) {
-    setToastMsg(msg)
-    setTimeout(() => setToastMsg(null), 3000)
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    setToast({ msg, visible: true })
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((prev) => (prev ? { ...prev, visible: false } : null))
+      setTimeout(() => setToast(null), 350)
+    }, 2500)
   }
 
   // 이메일 인증 발송 핸들러
@@ -119,7 +136,7 @@ export default function MyPage() {
     }
 
     try {
-      setIsLoading(true)
+      setIsEmailSending(true)
       await authService.sendVerificationEmail()
       setIsVerificationSent(true)
       setTimerSeconds(300) // 5분 초기화
@@ -131,7 +148,7 @@ export default function MyPage() {
       const msg = e.response?.data?.message || e.message || "인증 메일 전송 중 오류가 발생했습니다."
       showToast(msg)
     } finally {
-      setIsLoading(false)
+      setIsEmailSending(false)
     }
   }
 
@@ -173,7 +190,7 @@ export default function MyPage() {
     }
 
     try {
-      setIsLoading(true)
+      setIsOtpVerifying(true)
       await authService.verifyEmailCode(fullCode)
       setProfile((prev) => (prev ? { ...prev, emailVerified: true } : prev))
       setIsVerifyModalOpen(false)
@@ -183,7 +200,7 @@ export default function MyPage() {
       const msg = err.response?.data?.message || err.message || "인증 코드가 일치하지 않거나 유효시간이 지났습니다."
       showToast(msg)
     } finally {
-      setIsLoading(false)
+      setIsOtpVerifying(false)
     }
   }
 
@@ -191,7 +208,7 @@ export default function MyPage() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      setIsLoading(true)
+      setIsProfileUpdating(true)
       const updated = await authService.updateProfile({
         nickname: editNickname,
         bio: editBio,
@@ -203,24 +220,28 @@ export default function MyPage() {
       const msg = e.response?.data?.message || e.message || "프로필 변경 중 오류가 발생했습니다."
       showToast(msg)
     } finally {
-      setIsLoading(false)
+      setIsProfileUpdating(false)
     }
   }
 
   // 비밀번호 변경 제출
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!currentPassword) {
+      showToast("현재 비밀번호를 입력해주세요.")
+      return
+    }
     if (newPassword !== newPasswordConfirm) {
       showToast("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.")
       return
     }
-    if (newPassword.length < 8) {
-      showToast("새 비밀번호는 8자 이상 영문+숫자 조합이어야 합니다.")
+    if (!PASSWORD_REGEX.test(newPassword)) {
+      showToast("새 비밀번호는 8~20자의 영문과 숫자를 조합하여 입력해주세요.")
       return
     }
 
     try {
-      setIsLoading(true)
+      setIsPasswordChanging(true)
       await authService.changePassword({
         currentPassword,
         newPassword,
@@ -234,7 +255,7 @@ export default function MyPage() {
       const msg = err.response?.data?.message || err.message || "현재 비밀번호가 일치하지 않습니다."
       showToast(msg)
     } finally {
-      setIsLoading(false)
+      setIsPasswordChanging(false)
     }
   }
 
@@ -311,10 +332,16 @@ export default function MyPage() {
         </div>
       </header>
 
-      {/* 토스트 알림 */}
-      {toastMsg && (
-        <div className="fixed top-6 right-6 z-50 rounded-2xl bg-slate-900 text-white px-5 py-3 text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200">
-          {toastMsg}
+      {/* 부드러운 불투명도 0 -> 100 -> 0 트랜지션 토스트 (화면 하단 중앙) */}
+      {toast && (
+        <div
+          className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-[#18181B]/95 backdrop-blur-md text-white px-6 py-3.5 text-xs sm:text-sm font-semibold shadow-2xl transition-all duration-300 pointer-events-none flex items-center gap-2 border border-white/10 ${
+            toast.visible
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-2 scale-95"
+          }`}
+        >
+          <span>{toast.msg}</span>
         </div>
       )}
 
@@ -443,10 +470,10 @@ export default function MyPage() {
                   ) : (
                     <button
                       onClick={handleSendVerification}
-                      disabled={isLoading}
+                      disabled={isEmailSending}
                       className="w-full rounded-2xl bg-[#1A9E7A] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50"
                     >
-                      {isLoading ? "발송 중..." : "인증 코드 발송하기"}
+                      {isEmailSending ? "발송 중..." : "인증 코드 발송하기"}
                     </button>
                   )}
                 </div>
@@ -566,10 +593,10 @@ export default function MyPage() {
                   <div className="pt-1">
                     <button
                       type="submit"
-                      disabled={isLoading || !newPassword}
+                      disabled={isPasswordChanging || !newPassword}
                       className="rounded-xl bg-[#1A9E7A] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#158063] transition disabled:opacity-40"
                     >
-                      비밀번호 변경하기
+                      {isPasswordChanging ? "변경 중..." : "비밀번호 변경하기"}
                     </button>
                   </div>
                 </form>
@@ -667,10 +694,10 @@ export default function MyPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="rounded-xl bg-[#1A9E7A] px-5 py-2 text-xs font-bold text-white hover:bg-[#158063] transition"
+                  disabled={isProfileUpdating}
+                  className="rounded-xl bg-[#1A9E7A] px-5 py-2 text-xs font-bold text-white hover:bg-[#158063] transition disabled:opacity-50"
                 >
-                  저장
+                  {isProfileUpdating ? "저장 중..." : "저장"}
                 </button>
               </div>
             </form>
@@ -722,7 +749,7 @@ export default function MyPage() {
               <span>남은 시간: <strong className="text-[#1A9E7A]">{formatTimer(timerSeconds)}</strong></span>
               <button
                 onClick={handleSendVerification}
-                disabled={resendCooldown > 0}
+                disabled={resendCooldown > 0 || isEmailSending}
                 className="text-[#1A9E7A] hover:underline font-semibold disabled:opacity-40"
               >
                 {resendCooldown > 0 ? `${resendCooldown}초 후 재발송` : "인증번호 재발송"}
@@ -731,10 +758,10 @@ export default function MyPage() {
 
             <button
               onClick={handleVerifySubmit}
-              disabled={isLoading || otp.join("").length < 6}
+              disabled={isOtpVerifying || otp.join("").length < 6}
               className="w-full rounded-2xl bg-[#1A9E7A] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50"
             >
-              인증 완료
+              {isOtpVerifying ? "인증 중..." : "인증 완료"}
             </button>
           </div>
         </div>
