@@ -190,7 +190,17 @@ export function HomeWorkspace() {
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current)
     }
-    setToast({ msg, visible: true })
+    // 1. 먼저 opacity-0 상태로 DOM에 마운트
+    setToast({ msg, visible: false })
+
+    // 2. 브라우저 다음 프레임에 opacity-100으로 변경하여 부드러운 슬라이드다운 & 페이드인 트리거
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setToast({ msg, visible: true })
+      })
+    })
+
+    // 3. 2.5초 후 부드러운 페이드아웃 및 언마운트
     toastTimeoutRef.current = setTimeout(() => {
       setToast((prev) => (prev ? { ...prev, visible: false } : null))
       setTimeout(() => setToast(null), 350)
