@@ -1,13 +1,36 @@
 -- 회원
 CREATE TABLE IF NOT EXISTS users (
-    id            BIGSERIAL PRIMARY KEY,
-    email         VARCHAR(255) UNIQUE NOT NULL,
-    nickname      VARCHAR(50)  NOT NULL,
-    profile_image VARCHAR(500),
-    provider      VARCHAR(20)  NOT NULL,   -- KAKAO | GOOGLE
-    oauth_id      VARCHAR(255) NOT NULL,
-    created_at    TIMESTAMP    DEFAULT NOW(),
+    id             BIGSERIAL PRIMARY KEY,
+    email          VARCHAR(255) UNIQUE NOT NULL,
+    password       VARCHAR(255),               -- 이메일 회원 비밀번호 (소셜 전용은 NULL 허용)
+    nickname       VARCHAR(50)  NOT NULL,
+    profile_image  VARCHAR(500),
+    bio            VARCHAR(255) DEFAULT '나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.',
+    email_verified BOOLEAN      DEFAULT FALSE NOT NULL,
+    provider       VARCHAR(20),                -- 최초 가입 제공자 (LOCAL | KAKAO | NAVER | GOOGLE)
+    oauth_id       VARCHAR(255),
+    created_at     TIMESTAMP    DEFAULT NOW()
+);
+
+-- 소셜 계정 연동 (1:N 매핑)
+CREATE TABLE IF NOT EXISTS user_social_accounts (
+    id             BIGSERIAL PRIMARY KEY,
+    user_id        BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    provider       VARCHAR(20) NOT NULL,       -- KAKAO | NAVER | GOOGLE
+    oauth_id       VARCHAR(255) NOT NULL,
+    linked_at      TIMESTAMP DEFAULT NOW(),
     UNIQUE (provider, oauth_id)
+);
+
+-- 이메일 인증 기록 (5분 만료 / 30초 쿨다운 / 최대 5회)
+CREATE TABLE IF NOT EXISTS email_verifications (
+    id                  BIGSERIAL PRIMARY KEY,
+    email               VARCHAR(255) UNIQUE NOT NULL,
+    code                VARCHAR(6)   NOT NULL,
+    resend_count        INT          DEFAULT 0 NOT NULL,
+    expires_at          TIMESTAMP    NOT NULL,
+    resend_available_at TIMESTAMP    NOT NULL,
+    created_at          TIMESTAMP    DEFAULT NOW()
 );
 
 -- 여행 방
@@ -90,7 +113,9 @@ CREATE TABLE IF NOT EXISTS place_votes (
     UNIQUE (itinerary_place_id, user_id)
 );
 
--- 인덱스 전략 (테이블이 존재하더라도 인덱스가 없을 수 있으므로 CREATE INDEX IF NOT EXISTS 활용)
+-- 인덱스 전략
+CREATE INDEX IF NOT EXISTS idx_users_email                    ON users(email);
+CREATE INDEX IF NOT EXISTS idx_social_user_id                 ON user_social_accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_trip_members_trip_id           ON trip_members(trip_id);
 CREATE INDEX IF NOT EXISTS idx_preferences_trip_id            ON preferences(trip_id);
 CREATE INDEX IF NOT EXISTS idx_itinerary_days_trip_id         ON itinerary_days(trip_id);
@@ -101,8 +126,8 @@ CREATE INDEX IF NOT EXISTS idx_trips_invite_code              ON trips(invite_co
 -- -----------------------------------------------------
 -- 초기 데모용 데이터 적재 (초기 로딩 시 에러 방지)
 -- -----------------------------------------------------
-INSERT INTO users (id, email, nickname, profile_image, provider, oauth_id, created_at)
-VALUES (1, 'test@wandermap.io', 'Tester', '', 'LOCAL', 'mock-oauth-id', NOW())
+INSERT INTO users (id, email, password, nickname, profile_image, bio, email_verified, provider, oauth_id, created_at)
+VALUES (1, 'test@wandermap.io', '$2a$10$Ew.YQ7q5y6cIqVlE.o4B9eM6rWp.XyY0C.t7G.zR8qN6x.N5aK5tO', '미때줌', 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&q=80', '나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.', TRUE, 'NAVER', 'mock-oauth-id', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO trips (id, invite_code, title, destination, start_date, end_date, status, created_by, created_at)
