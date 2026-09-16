@@ -97,24 +97,29 @@ public class EmailService {
         String subject = "[WanderMap] 회원가입 이메일 본인 인증 번호 안내";
         String htmlContent = buildEmailTemplate(code);
 
+        // 1. 개발 및 테스트 편의를 위해 콘솔에 인증 코드 즉시 출력
+        System.out.println("\n========================================");
+        System.out.println("[Email Verify Code] " + toEmail + " -> " + code);
+        System.out.println("========================================\n");
+
+        // 2. 실제 SMTP 계정 설정 확인
+        if (mailSender == null || senderEmail == null || senderEmail.isBlank() || senderEmail.contains("noreply")) {
+            log.info("[SMTP Skip] spring.mail 계정이 미설정되어 이메일 발송을 스킵하고 콘솔 로그로 대체합니다.");
+            return;
+        }
+
+        // 3. 실제 SMTP 메일 발송
         try {
-            if (mailSender != null) {
-                MimeMessage message = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-                helper.setFrom(senderEmail, "WanderMap");
-                helper.setTo(toEmail);
-                helper.setSubject(subject);
-                helper.setText(htmlContent, true);
-                mailSender.send(message);
-                log.info("[EMAIL SENT] Successfully sent verification email to {}", toEmail);
-            } else {
-                log.info("=================================================");
-                log.info("[DEV MOCK EMAIL] To: {}", toEmail);
-                log.info("[DEV MOCK EMAIL] Code: {}", code);
-                log.info("=================================================");
-            }
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(senderEmail);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("[SMTP Success] 이메일 발송 성공: {}", toEmail);
         } catch (Exception e) {
-            log.warn("[EMAIL SEND FALLBACK] Could not send via SMTP, logged to console instead: code={}", code, e);
+            log.warn("[SMTP Error] 이메일 전송 중 예외 발생: {}", e.getMessage());
         }
     }
 
