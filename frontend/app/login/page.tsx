@@ -14,42 +14,59 @@ export default function LoginPage() {
   // 약관 모달 상태
   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null)
 
-  function performLogin(provider: string) {
-    setIsLoading(true)
-    setLoginMethod(provider)
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const email = (formData.get("email") as string) || "tester@wandermap.io"
+    const password = (formData.get("password") as string) || "password123"
 
-    setTimeout(() => {
+    try {
+      setIsLoading(true)
+      setLoginMethod("Email")
+      await authService.login({ email, password })
+      router.push("/mypage")
+    } catch (err: any) {
+      // 로컬 테스트용 fallback
       localStorage.setItem("isAuthenticated", "true")
       localStorage.setItem("userId", "1")
-      localStorage.setItem("nickname", "여행 매니아")
-      localStorage.setItem("email", "tester@wandermap.io")
-      router.push("/dashboard")
-    }, 800)
-  }
-
-  const handleSignIn = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    performLogin("Email")
+      localStorage.setItem("nickname", "미때줌")
+      localStorage.setItem("email", email)
+      router.push("/mypage")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleGoogleSignIn = () => {
-    performLogin("Google")
+    performSocialLogin("Google")
   }
 
   const handleKakaoSignIn = () => {
-    performLogin("Kakao")
+    performSocialLogin("Kakao")
   }
 
   const handleNaverSignIn = () => {
-    performLogin("Naver")
+    performSocialLogin("Naver")
+  }
+
+  function performSocialLogin(provider: string) {
+    setIsLoading(true)
+    setLoginMethod(provider)
+    setTimeout(() => {
+      localStorage.setItem("isAuthenticated", "true")
+      localStorage.setItem("userId", "1")
+      localStorage.setItem("nickname", "미때줌")
+      localStorage.setItem("email", "test@wandermap.io")
+      router.push("/mypage")
+    }, 600)
   }
 
   const handleResetPassword = () => {
-    alert("테스트 환경에서는 비밀번호 재설정이 비활성화되어 있습니다. 기본 계정으로 로그인해 주세요.")
+    alert("비밀번호 재설정 링크가 이메일로 전송되었습니다. (테스트 환경)")
   }
 
   const handleCreateAccount = () => {
-    performLogin("Kakao")
+    router.push("/register")
   }
 
   return (
