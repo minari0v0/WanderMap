@@ -52,6 +52,22 @@ export const authService = {
     return res.data
   },
 
+  // 닉네임 중복 확인
+  async checkNickname(nickname: string): Promise<{ available: boolean; message: string }> {
+    const res = await api.get<{ available: boolean; message: string }>(
+      `/api/auth/check-nickname?nickname=${encodeURIComponent(nickname)}`
+    )
+    return res.data
+  },
+
+  // 이메일 중복 확인
+  async checkEmail(email: string): Promise<{ available: boolean; message: string }> {
+    const res = await api.get<{ available: boolean; message: string }>(
+      `/api/auth/check-email?email=${encodeURIComponent(email)}`
+    )
+    return res.data
+  },
+
   // 2. 로그인
   async login(params: { email: string; password: string }): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>("/api/auth/login", params)

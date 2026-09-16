@@ -77,6 +77,14 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
+    public boolean checkEmail(String email) {
+        if (email == null || !EMAIL_PATTERN.matcher(email.trim()).matches()) {
+            return false;
+        }
+        return userRepository.findByEmail(email.trim()).isEmpty();
+    }
+
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail().trim())
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일 주소입니다."));

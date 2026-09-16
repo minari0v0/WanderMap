@@ -31,6 +31,15 @@ public class AuthController {
         ));
     }
 
+    @GetMapping("/check-email")
+    public ResponseEntity<Map<String, Object>> checkEmail(@RequestParam String email) {
+        boolean available = authService.checkEmail(email);
+        return ResponseEntity.ok(Map.of(
+                "available", available,
+                "message", available ? "사용 가능한 이메일입니다." : "이미 가입된 이메일 주소입니다."
+        ));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);

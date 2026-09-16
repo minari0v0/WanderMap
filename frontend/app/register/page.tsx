@@ -16,18 +16,74 @@ export default function RegisterPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null)
 
+  const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "available" | "duplicate" | "invalid">("idle")
+  const [nicknameStatus, setNicknameStatus] = useState<"idle" | "checking" | "available" | "duplicate" | "invalid">("idle")
+
   const NICKNAME_REGEX = /^[a-zA-Z0-9가-힣]{2,10}$/
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,20}$/
 
-  const isNicknameValid = !nickname || NICKNAME_REGEX.test(nickname)
-  const isEmailValid = !email || EMAIL_REGEX.test(email)
-  const isPasswordValid = !password || PASSWORD_REGEX.test(password)
-  const isPasswordMatch = !passwordConfirm || password === passwordConfirm
+  // 닉네임 실시간 중복 확인 (400ms debounce)
+  React.useEffect(() => {
+    if (!nickname.trim()) {
+      setNicknameStatus("idle")
+      return
+    }
+    if (!NICKNAME_REGEX.test(nickname.trim())) {
+      setNicknameStatus("invalid")
+      return
+    }
+
+    setNicknameStatus("checking")
+    const timer = setTimeout(async () => {
+      try {
+        const res = await authService.checkNickname(nickname.trim())
+        setNicknameStatus(res.available ? "available" : "duplicate")
+      } catch {
+        setNicknameStatus("idle")
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [nickname])
+
+  // 이메일 실시간 중복 확인 (400ms debounce)
+  React.useEffect(() => {
+    if (!email.trim()) {
+      setEmailStatus("idle")
+      return
+    }
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setEmailStatus("invalid")
+      return
+    }
+
+    setEmailStatus("checking")
+    const timer = setTimeout(async () => {
+      try {
+        const res = await authService.checkEmail(email.trim())
+        setEmailStatus(res.available ? "available" : "duplicate")
+      } catch {
+        setEmailStatus("idle")
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [email])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrorMsg(null)
+
+    if (nicknameStatus === "duplicate") {
+      setErrorMsg("이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.")
+      return
+    }
+
+    if (emailStatus === "duplicate") {
+      setErrorMsg("이미 가입된 이메일 주소입니다. 로그인해주세요.")
+      return
+    }
 
     if (!NICKNAME_REGEX.test(nickname.trim())) {
       setErrorMsg("닉네임은 2~10자의 한글, 영문, 숫자만 사용 가능합니다.")
@@ -126,9 +182,15 @@ export default function RegisterPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-bold text-[#6B6B72] uppercase">닉네임</label>
-                    <span className={`text-[10px] font-semibold ${nickname && !NICKNAME_REGEX.test(nickname) ? "text-red-500" : "text-[#8C8C94]"}`}>
-                      2~10자 한글/영문/숫자
-                    </span>
+                    {nicknameStatus === "duplicate" ? (
+                      <span className="text-[10px] font-bold text-red-500">이미 사용 중인 닉네임입니다</span>
+                    ) : nicknameStatus === "available" ? (
+                      <span className="text-[10px] font-bold text-[#1A9E7A]">✓ 사용 가능한 닉네임</span>
+                    ) : (
+                      <span className={`text-[10px] font-semibold ${nickname && !NICKNAME_REGEX.test(nickname) ? "text-red-500" : "text-[#8C8C94]"}`}>
+                        2~10자 한글/영문/숫자
+                      </span>
+                    )}
                   </div>
                   <div className="relative flex items-center">
                     <User className="absolute left-3.5 size-4 text-[#9E9EA4]" />
@@ -139,8 +201,10 @@ export default function RegisterPage() {
                       placeholder="닉네임 입력"
                       maxLength={10}
                       className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
-                        nickname && !NICKNAME_REGEX.test(nickname)
+                        nicknameStatus === "duplicate" || (nickname && !NICKNAME_REGEX.test(nickname))
                           ? "border-red-400 focus:border-red-500"
+                          : nicknameStatus === "available"
+                          ? "border-[#1A9E7A] focus:border-[#1A9E7A]"
                           : "border-[#E2E2DA] focus:border-[#1A9E7A]"
                       }`}
                       required
@@ -152,11 +216,15 @@ export default function RegisterPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-bold text-[#6B6B72] uppercase">이메일</label>
-                    {email && !EMAIL_REGEX.test(email) && (
+                    {emailStatus === "duplicate" ? (
+                      <span className="text-[10px] font-bold text-red-500">이미 가입된 이메일 주소입니다</span>
+                    ) : emailStatus === "available" ? (
+                      <span className="text-[10px] font-bold text-[#1A9E7A]">✓ 사용 가능한 이메일</span>
+                    ) : email && !EMAIL_REGEX.test(email) ? (
                       <span className="text-[10px] font-semibold text-red-500">
                         올바른 이메일 형식을 입력하세요
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   <div className="relative flex items-center">
                     <Mail className="absolute left-3.5 size-4 text-[#9E9EA4]" />
@@ -166,8 +234,10 @@ export default function RegisterPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="이메일 입력"
                       className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
-                        email && !EMAIL_REGEX.test(email)
+                        emailStatus === "duplicate" || (email && !EMAIL_REGEX.test(email))
                           ? "border-red-400 focus:border-red-500"
+                          : emailStatus === "available"
+                          ? "border-[#1A9E7A] focus:border-[#1A9E7A]"
                           : "border-[#E2E2DA] focus:border-[#1A9E7A]"
                       }`}
                       required
