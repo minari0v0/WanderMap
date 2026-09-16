@@ -2,6 +2,7 @@ package com.wandermap.wandermap.global.mail;
 
 import com.wandermap.wandermap.domain.auth.EmailVerification;
 import com.wandermap.wandermap.domain.auth.EmailVerificationRepository;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
