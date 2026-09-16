@@ -26,7 +26,7 @@
 ## 🛠️ 2. 향후 단계별 구현 기능 명세
 
 ### 📌 [Next 1: 인증 시스템 구축 (이메일 ➜ 계정 연동 ➜ OAuth 3사)]
-상세 설계는 [oauth_and_auth_architecture.md](file:///c:/Users/Silok/Downloads/myProject/WanderMap/docs/oauth_and_auth_architecture.md) 참조.
+상세 설계는 [oauth_and_auth_architecture.md](/docs/oauth_and_auth_architecture.md) 참조.
 1. **이메일 회원가입/로그인 & JWT 발급**: BCrypt 암호화, Access/Refresh Token 인증 체계.
 2. **계정 통합(Account Linking) DB 분리**: `user_social_accounts` 1:N 매핑을 통해 동일 이메일 자동 병합 지원.
 3. **카카오/네이버/구글 OAuth 2.0 공식 연동**: Spring OAuth2 Client 및 GitHub Actions Secrets 기반 보안 파이프라인.
