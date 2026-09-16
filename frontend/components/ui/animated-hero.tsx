@@ -25,18 +25,20 @@ export function Hero() {
 
   return (
     <div className="space-y-6 text-left">
-      {/* 헤드라인 + 글자 겹침 없는 자연스러운 gap-x 애니메이션 */}
+      {/* 헤드라인 + 자연스러운 간격(4.85em)의 단어 고정 슬롯 */}
       <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.25] text-[#18181B] break-keep">
         <span className="block mb-1.5">엑셀로 싸우던 여행 계획,</span>
-        <span className="inline-flex items-baseline gap-x-2.5 whitespace-nowrap">
-          <span
-            className={`inline-block text-[#1A9E7A] transition-all duration-250 transform ${
-              fade ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1.5"
-            }`}
-          >
-            {WORDS[index]}
+        <span className="inline-flex items-baseline whitespace-nowrap">
+          <span className="relative inline-block w-[4.85em] shrink-0 text-left">
+            <span
+              className={`inline-block text-[#1A9E7A] transition-all duration-250 transform ${
+                fade ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1.5"
+              }`}
+            >
+              {WORDS[index]}
+            </span>
           </span>
-          <span>함께 결정해요.</span>
+          <span className="inline-block">함께 결정해요.</span>
         </span>
       </h1>
 
