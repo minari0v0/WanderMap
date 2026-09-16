@@ -76,7 +76,13 @@ public class UserController {
         if (principal instanceof Long id) {
             return id;
         }
-        // 개발/테스트 fallback: 기본 ID 1
-        return 1L;
+        if (principal instanceof String strId) {
+            try {
+                return Long.parseLong(strId);
+            } catch (NumberFormatException ignored) {}
+        }
+        throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."
+        );
     }
 }

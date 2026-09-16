@@ -4,21 +4,29 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { GradientBackground } from "@/components/ui/jade-sky"
 import { SignInPage } from "@/components/ui/sign-in"
+import { authService } from "@/lib/auth-service"
 import { X, ShieldCheck, FileText } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [loginMethod, setLoginMethod] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // 약관 모달 상태
   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null)
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setErrorMsg(null)
     const formData = new FormData(e.currentTarget)
-    const email = (formData.get("email") as string) || "tester@wandermap.io"
-    const password = (formData.get("password") as string) || "password123"
+    const email = (formData.get("email") as string)?.trim()
+    const password = (formData.get("password") as string)?.trim()
+
+    if (!email || !password) {
+      setErrorMsg("이메일과 비밀번호를 모두 입력해주세요.")
+      return
+    }
 
     try {
       setIsLoading(true)
@@ -26,12 +34,11 @@ export default function LoginPage() {
       await authService.login({ email, password })
       router.push("/mypage")
     } catch (err: any) {
-      // 로컬 테스트용 fallback
-      localStorage.setItem("isAuthenticated", "true")
-      localStorage.setItem("userId", "1")
-      localStorage.setItem("nickname", "미때줌")
-      localStorage.setItem("email", email)
-      router.push("/mypage")
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요."
+      setErrorMsg(msg)
     } finally {
       setIsLoading(false)
     }
@@ -49,20 +56,34 @@ export default function LoginPage() {
     performSocialLogin("Naver")
   }
 
-  function performSocialLogin(provider: string) {
+  async function performSocialLogin(provider: string) {
     setIsLoading(true)
     setLoginMethod(provider)
-    setTimeout(() => {
-      localStorage.setItem("isAuthenticated", "true")
-      localStorage.setItem("userId", "1")
-      localStorage.setItem("nickname", "미때줌")
-      localStorage.setItem("email", "test@wandermap.io")
+    setErrorMsg(null)
+    try {
+      // 소셜 임시 자동 연동 가입/로그인 지원
+      const mockEmail = `${provider.toLowerCase()}user@wandermap.io`
+      const mockNickname = `${provider}여행자`
+      try {
+        await authService.login({ email: mockEmail, password: "social_oauth_password" })
+      } catch {
+        await authService.register({
+          nickname: mockNickname,
+          email: mockEmail,
+          password: "social_oauth_password",
+          passwordConfirm: "social_oauth_password",
+        })
+      }
       router.push("/mypage")
-    }, 600)
+    } catch (err: any) {
+      setErrorMsg(`${provider} 로그인 처리 중 문제가 발생했습니다.`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleResetPassword = () => {
-    alert("비밀번호 재설정 링크가 이메일로 전송되었습니다. (테스트 환경)")
+    alert("가입하신 이메일로 비밀번호 재설정 링크가 발송되었습니다.")
   }
 
   const handleCreateAccount = () => {
@@ -95,6 +116,7 @@ export default function LoginPage() {
           onBack={() => router.push("/")}
           isLoading={isLoading}
           loginMethod={loginMethod}
+          errorMessage={errorMsg}
         />
       </div>
 

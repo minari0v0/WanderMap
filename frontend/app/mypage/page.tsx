@@ -29,17 +29,8 @@ import {
 
 export default function MyPage() {
   const router = useRouter()
-  const [profile, setProfile] = useState<UserProfile>({
-    id: 1,
-    email: "test@wandermap.io",
-    nickname: "미때줌",
-    profileImage: "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&q=80",
-    bio: "나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.",
-    emailVerified: false,
-    provider: "NAVER",
-    hasPassword: true,
-    linkedProviders: ["NAVER"],
-  })
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
 
   const [activeTab, setActiveTab] = useState<"account" | "appSettings">("account")
   const [isLoading, setIsLoading] = useState(false)
@@ -47,8 +38,8 @@ export default function MyPage() {
 
   // 1. 프로필 수정 모달 상태
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
-  const [editNickname, setEditNickname] = useState(profile.nickname)
-  const [editBio, setEditBio] = useState(profile.bio)
+  const [editNickname, setEditNickname] = useState("")
+  const [editBio, setEditBio] = useState("")
 
   // 2. 이메일 인증 발송 & 모달 상태
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false)
@@ -72,19 +63,29 @@ export default function MyPage() {
   const [themeNotif, setThemeNotif] = useState(true)
   const [plannerNotif, setPlannerNotif] = useState(true)
 
-  // 초기 프로필 로드
+  // 초기 프로필 로드 (실제 JWT 토큰 검증)
   useEffect(() => {
+    const token = authService.getStoredToken()
+    if (!token) {
+      router.push("/login")
+      return
+    }
+
     authService
       .getMyProfile()
       .then((data) => {
         setProfile(data)
         setEditNickname(data.nickname)
-        setEditBio(data.bio)
+        setEditBio(data.bio || "나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.")
       })
       .catch(() => {
-        // 로컬 fallback 유지
+        authService.logout()
+        router.push("/login")
       })
-  }, [])
+      .finally(() => {
+        setIsInitializing(false)
+      })
+  }, [router])
 
   // 5분 만료 타이머
   useEffect(() => {
@@ -127,18 +128,19 @@ export default function MyPage() {
     try {
       setIsLoading(true)
       await authService.sendVerificationEmail()
-    } catch (e) {
-      // 로컬 mock 발송 처리
-    } finally {
-      setIsLoading(false)
       setIsVerificationSent(true)
       setTimerSeconds(300) // 5분 초기화
       setResendCooldown(30) // 30초 쿨다운 시작
       setResendCount((prev) => prev + 1)
       setIsVerifyModalOpen(true)
       showToast("인증 번호가 이메일로 전송되었습니다. (5분 유효)")
+    } catch (e: any) {
+      const msg = e.response?.data?.message || e.message || "인증 메일 전송 중 오류가 발생했습니다."
+      showToast(msg)
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
 
   // OTP 6박스 붙여넣기(Ctrl+V) & 자동 포커스 이동 핸들러
   const handleOtpChange = (index: number, value: string) => {
@@ -180,16 +182,13 @@ export default function MyPage() {
     try {
       setIsLoading(true)
       await authService.verifyEmailCode(fullCode)
-      setProfile((prev) => ({ ...prev, emailVerified: true }))
+      setProfile((prev) => (prev ? { ...prev, emailVerified: true } : prev))
       setIsVerifyModalOpen(false)
       setIsVerificationSent(false)
       showToast("이메일 본인 인증이 성공적으로 완료되었습니다! 🍊")
     } catch (err: any) {
-      // 로컬 모의 인증 성공
-      setProfile((prev) => ({ ...prev, emailVerified: true }))
-      setIsVerifyModalOpen(false)
-      setIsVerificationSent(false)
-      showToast("이메일 본인 인증이 완료되었습니다! 🍊")
+      const msg = err.response?.data?.message || err.message || "인증 코드가 일치하지 않거나 유효시간이 지났습니다."
+      showToast(msg)
     } finally {
       setIsLoading(false)
     }
@@ -207,10 +206,9 @@ export default function MyPage() {
       setProfile(updated)
       setIsEditProfileOpen(false)
       showToast("프로필이 성공적으로 변경되었습니다.")
-    } catch (e) {
-      setProfile((prev) => ({ ...prev, nickname: editNickname, bio: editBio }))
-      setIsEditProfileOpen(false)
-      showToast("프로필이 변경되었습니다.")
+    } catch (e: any) {
+      const msg = e.response?.data?.message || e.message || "프로필 변경 중 오류가 발생했습니다."
+      showToast(msg)
     } finally {
       setIsLoading(false)
     }
@@ -220,7 +218,7 @@ export default function MyPage() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
     if (newPassword !== newPasswordConfirm) {
-      showToast("새 비밀번호가 일치하지 않습니다.")
+      showToast("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.")
       return
     }
     if (newPassword.length < 6) {
@@ -240,10 +238,8 @@ export default function MyPage() {
       setNewPasswordConfirm("")
       showToast("비밀번호가 성공적으로 변경되었습니다.")
     } catch (err: any) {
-      showToast("비밀번호 변경이 완료되었습니다.")
-      setCurrentPassword("")
-      setNewPassword("")
-      setNewPasswordConfirm("")
+      const msg = err.response?.data?.message || err.message || "현재 비밀번호가 일치하지 않습니다."
+      showToast(msg)
     } finally {
       setIsLoading(false)
     }
@@ -251,6 +247,7 @@ export default function MyPage() {
 
   // 소셜 연동 토글
   const handleToggleSocial = async (provider: string) => {
+    if (!profile) return
     const isLinked = profile.linkedProviders?.includes(provider)
     try {
       let updated: UserProfile
@@ -261,19 +258,32 @@ export default function MyPage() {
       }
       setProfile(updated)
       showToast(`${provider} 계정 연동 상태가 변경되었습니다.`)
-    } catch (e) {
-      const nextProviders = isLinked
-        ? profile.linkedProviders.filter((p) => p !== provider)
-        : [...(profile.linkedProviders || []), provider]
-      setProfile((prev) => ({ ...prev, linkedProviders: nextProviders }))
-      showToast(`${provider} 계정 연동 상태가 변경되었습니다.`)
+    } catch (e: any) {
+      const msg = e.response?.data?.message || e.message || "소셜 계정 연동 중 오류가 발생했습니다."
+      showToast(msg)
     }
+  }
+
+  const handleLogout = () => {
+    authService.logout()
+    router.push("/login")
   }
 
   const formatTimer = (seconds: number) => {
     const m = Math.floor(seconds / 60)
     const s = seconds % 60
     return `${m}:${s < 10 ? "0" : ""}${s}`
+  }
+
+  if (isInitializing || !profile) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#1A9E7A] border-t-transparent" />
+          <span className="text-xs font-bold text-[#8A8A93]">내 정보를 불러오는 중...</span>
+        </div>
+      </div>
+    )
   }
 
   return (

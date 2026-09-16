@@ -112,7 +112,7 @@ export default function RegisterPage() {
                       type="text"
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
-                      placeholder="여행자 닉네임 (예: 미때줌)"
+                      placeholder="닉네임 입력"
                       className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
                       required
                     />

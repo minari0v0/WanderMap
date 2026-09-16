@@ -130,6 +130,9 @@ INSERT INTO users (id, email, password, nickname, profile_image, bio, email_veri
 VALUES (1, 'test@wandermap.io', '$2a$10$Ew.YQ7q5y6cIqVlE.o4B9eM6rWp.XyY0C.t7G.zR8qN6x.N5aK5tO', '미때줌', 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&q=80', '나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.', TRUE, 'NAVER', 'mock-oauth-id', NOW())
 ON CONFLICT (id) DO NOTHING;
 
+-- 시퀀스 충돌 방지를 위해 users_id_seq 값 동기화
+SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 1) FROM users));
+
 INSERT INTO trips (id, invite_code, title, destination, start_date, end_date, status, created_by, created_at)
 VALUES (999, 'demo-invite-code-1', 'Jeju East Coast Tour 🌴', 'Jeju', '2026-08-15', '2026-08-18', 'PLANNING', 1, NOW())
 ON CONFLICT (id) DO NOTHING;

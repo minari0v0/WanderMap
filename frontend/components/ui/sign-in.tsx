@@ -17,6 +17,7 @@ export interface SignInPageProps {
   onBack?: () => void
   isLoading?: boolean
   loginMethod?: string | null
+  errorMessage?: string | null
 }
 
 export function SignInPage({
@@ -33,6 +34,7 @@ export function SignInPage({
   onBack,
   isLoading = false,
   loginMethod = null,
+  errorMessage = null,
 }: SignInPageProps) {
   const images = heroImages && heroImages.length > 0 ? heroImages : [heroImageSrc]
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -210,6 +212,13 @@ export function SignInPage({
             <span className="relative bg-white/90 px-3 text-[11px] font-bold text-[#6B6B72] uppercase">또는 이메일</span>
           </div>
 
+          {/* 에러 메시지 알림 */}
+          {errorMessage && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 font-medium">
+              {errorMessage}
+            </div>
+          )}
+
           {/* 이메일 로그인 폼 */}
           <form onSubmit={onSignIn} className="space-y-4">
             <div>
@@ -219,7 +228,6 @@ export function SignInPage({
                 <input
                   name="email"
                   type="email"
-                  defaultValue="tester@wandermap.io"
                   placeholder="name@example.com"
                   className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
                   required
@@ -243,7 +251,6 @@ export function SignInPage({
                 <input
                   name="password"
                   type="password"
-                  defaultValue="********"
                   placeholder="비밀번호 입력"
                   className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
                   required
