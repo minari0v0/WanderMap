@@ -105,6 +105,8 @@ export default function DashboardPage() {
   // 로그아웃
   function handleLogout() {
     localStorage.removeItem("isAuthenticated")
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("refreshToken")
     router.push("/")
   }
 

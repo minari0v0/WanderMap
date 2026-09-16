@@ -280,7 +280,7 @@ export default function MyPage() {
 
   const handleLogout = () => {
     authService.logout()
-    router.push("/login")
+    router.push("/")
   }
 
   const formatTimer = (seconds: number) => {
