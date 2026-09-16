@@ -1,13 +1,25 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Compass, Users, MapPin, ThumbsUp, ThumbsDown, Plane, ArrowRight, Plus } from "lucide-react"
+import { Compass, Users, MapPin, ThumbsUp, ThumbsDown, Plane, ArrowRight, Plus, User, LayoutDashboard, LogOut } from "lucide-react"
 import { GradientBackground } from "@/components/ui/jade-sky"
 import { Hero } from "@/components/ui/animated-hero"
 import { Badge } from "@/components/ui/badge"
+import { authService } from "@/lib/auth-service"
 
 export default function HomePage() {
   const router = useRouter()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    setIsLoggedIn(!!authService.getStoredToken())
+  }, [])
+
+  const handleLogout = () => {
+    authService.logout()
+    setIsLoggedIn(false)
+  }
 
   return (
     <GradientBackground className="min-h-screen text-[#18181B] font-sans flex flex-col justify-between">
@@ -22,18 +34,43 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/login")}
-              className="rounded-xl border border-[#E2E2DA] bg-white/90 backdrop-blur-sm px-4 py-2 text-xs font-semibold hover:bg-white transition text-[#18181B]"
-            >
-              로그인
-            </button>
-            <button
-              onClick={() => router.push("/login")}
-              className="rounded-xl bg-[#1A9E7A] px-4 py-2 text-xs font-bold text-white hover:bg-[#158063] transition shadow-sm"
-            >
-              새 여행 만들기
-            </button>
+            {isLoggedIn ? (
+              <>
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#E2E2DA] bg-white/90 backdrop-blur-sm px-3.5 py-2 text-xs font-semibold hover:bg-white transition text-[#18181B]"
+                >
+                  <LayoutDashboard className="size-3.5 text-[#1A9E7A]" /> 대시보드
+                </button>
+                <button
+                  onClick={() => router.push("/mypage")}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#E2E2DA] bg-white/90 backdrop-blur-sm px-3.5 py-2 text-xs font-semibold hover:bg-white transition text-[#18181B]"
+                >
+                  <User className="size-3.5 text-[#1A9E7A]" /> 마이페이지
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1 rounded-xl border border-[#E2E2DA] bg-white/90 backdrop-blur-sm px-3 py-2 text-xs font-semibold hover:bg-red-50 hover:text-red-500 transition text-[#6B6B72]"
+                >
+                  <LogOut className="size-3.5" />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => router.push("/login")}
+                  className="rounded-xl border border-[#E2E2DA] bg-white/90 backdrop-blur-sm px-4 py-2 text-xs font-semibold hover:bg-white transition text-[#18181B]"
+                >
+                  로그인
+                </button>
+                <button
+                  onClick={() => router.push("/register")}
+                  className="rounded-xl bg-[#1A9E7A] px-4 py-2 text-xs font-bold text-white hover:bg-[#158063] transition shadow-sm"
+                >
+                  회원가입
+                </button>
+              </>
+            )}
           </div>
         </header>
 

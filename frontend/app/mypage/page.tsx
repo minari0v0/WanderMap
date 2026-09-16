@@ -6,24 +6,19 @@ import { authService, UserProfile } from "@/lib/auth-service"
 import {
   Compass,
   Home,
-  Search,
-  Bookmark,
-  Hash,
   LayoutDashboard,
-  Settings,
   User,
-  FileText,
   ShieldCheck,
   LogOut,
   Edit2,
   Mail,
   Lock,
-  Smartphone,
   Laptop,
   CheckCircle2,
   AlertCircle,
   X,
   ChevronRight,
+  Plane,
   Sparkles,
 } from "lucide-react"
 
@@ -32,7 +27,7 @@ export default function MyPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
 
-  const [activeTab, setActiveTab] = useState<"account" | "appSettings">("account")
+  const [activeTab, setActiveTab] = useState<"account" | "notifications">("account")
   const [isLoading, setIsLoading] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
 
@@ -57,11 +52,9 @@ export default function MyPage() {
   const [newPassword, setNewPassword] = useState("")
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("")
 
-  // 4. 어플리케이션 설정 상태 (스크린샷 1)
-  const [selectedFolder, setSelectedFolder] = useState("기본 저장소")
-  const [selectedTheme, setSelectedTheme] = useState("기본 테마")
-  const [themeNotif, setThemeNotif] = useState(true)
-  const [plannerNotif, setPlannerNotif] = useState(true)
+  // 4. 알림 수신 설정
+  const [tripVoteNotif, setTripVoteNotif] = useState(true)
+  const [tripInviteNotif, setTripInviteNotif] = useState(true)
 
   // 초기 프로필 로드 (실제 JWT 토큰 검증)
   useEffect(() => {
@@ -76,7 +69,7 @@ export default function MyPage() {
       .then((data) => {
         setProfile(data)
         setEditNickname(data.nickname)
-        setEditBio(data.bio || "나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.")
+        setEditBio(data.bio || "함께하는 즐거운 여행을 계획하고 있습니다 🌴")
       })
       .catch(() => {
         authService.logout()
@@ -133,7 +126,7 @@ export default function MyPage() {
       setResendCooldown(30) // 30초 쿨다운 시작
       setResendCount((prev) => prev + 1)
       setIsVerifyModalOpen(true)
-      showToast("인증 번호가 이메일로 전송되었습니다. (5분 유효)")
+      showToast("인증 번호가 전송되었습니다. (터미널 콘솔 로그 확인)")
     } catch (e: any) {
       const msg = e.response?.data?.message || e.message || "인증 메일 전송 중 오류가 발생했습니다."
       showToast(msg)
@@ -185,7 +178,7 @@ export default function MyPage() {
       setProfile((prev) => (prev ? { ...prev, emailVerified: true } : prev))
       setIsVerifyModalOpen(false)
       setIsVerificationSent(false)
-      showToast("이메일 본인 인증이 성공적으로 완료되었습니다! 🍊")
+      showToast("이메일 본인 인증이 완료되었습니다! 🌿")
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || "인증 코드가 일치하지 않거나 유효시간이 지났습니다."
       showToast(msg)
@@ -221,8 +214,8 @@ export default function MyPage() {
       showToast("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.")
       return
     }
-    if (newPassword.length < 6) {
-      showToast("새 비밀번호는 최소 6자 이상이어야 합니다.")
+    if (newPassword.length < 8) {
+      showToast("새 비밀번호는 8자 이상 영문+숫자 조합이어야 합니다.")
       return
     }
 
@@ -288,6 +281,36 @@ export default function MyPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#18181B] font-sans flex flex-col justify-between">
+      {/* 상단 네비게이션 헤더 */}
+      <header className="border-b border-[#E2E2DA] bg-white px-6 py-4 shadow-sm">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="flex items-center gap-2.5 text-left group"
+          >
+            <span className="flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm group-hover:scale-105 transition">
+              <Compass className="size-4.5" />
+            </span>
+            <span className="text-lg font-black tracking-tight text-[#18181B]">WanderMap</span>
+          </button>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="flex items-center gap-1.5 rounded-xl border border-[#E2E2DA] bg-white px-3.5 py-2 text-xs font-semibold hover:bg-slate-50 transition text-[#6B6B72]"
+            >
+              <LayoutDashboard className="size-3.5 text-[#1A9E7A]" /> 내 대시보드
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 rounded-xl border border-[#E2E2DA] px-3.5 py-2 text-xs text-slate-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition"
+            >
+              <LogOut className="size-3.5" /> 로그아웃
+            </button>
+          </div>
+        </div>
+      </header>
+
       {/* 토스트 알림 */}
       {toastMsg && (
         <div className="fixed top-6 right-6 z-50 rounded-2xl bg-slate-900 text-white px-5 py-3 text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200">
@@ -295,670 +318,432 @@ export default function MyPage() {
         </div>
       )}
 
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-8">
-        {/* 1. 최좌측 글로벌 사이드바 (스크린샷 2) */}
-        <aside className="hidden xl:flex w-56 flex-col justify-between py-2 shrink-0">
-          <div className="space-y-6">
-            <div className="flex items-center gap-2.5 px-2">
-              <span className="flex size-8 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#FF5A36] text-white font-black text-sm">
-                P
-              </span>
-              <span className="text-lg font-black tracking-tight text-[#18181B]">PickPl</span>
-            </div>
+      {/* 메인 바디 */}
+      <div className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col md:flex-row gap-8">
+        {/* 좌측 사이드바: 프로필 카드 + 탭 메뉴 */}
+        <aside className="w-full md:w-72 flex flex-col gap-6 shrink-0">
+          {/* 프로필 카드 */}
+          <div className="relative rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm flex flex-col items-center text-center space-y-3">
+            <button
+              onClick={() => setIsEditProfileOpen(true)}
+              className="absolute top-5 right-5 flex items-center gap-1 text-xs font-semibold text-[#6B6B72] hover:text-[#18181B] border border-[#E2E2DA] rounded-lg px-2.5 py-1 bg-white hover:bg-slate-50 transition"
+            >
+              <Edit2 className="size-3" /> 수정
+            </button>
 
-            <nav className="space-y-1 text-xs font-bold text-[#52525B]">
-              <button
-                onClick={() => router.push("/")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white transition text-left"
-              >
-                <Home className="size-4 text-[#8C8C94]" /> 홈 · 발견
-              </button>
-              <button
-                onClick={() => router.push("/trips/view/999")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white transition text-left"
-              >
-                <Search className="size-4 text-[#8C8C94]" /> 공간 탐색
-              </button>
-              <button
-                onClick={() => router.push("/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white transition text-left"
-              >
-                <Bookmark className="size-4 text-[#8C8C94]" /> 내 컬렉션
-              </button>
-            </nav>
-
-            <div className="pt-2">
-              <span className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-wider px-3 block mb-2">
-                빠른 태그 검색
-              </span>
-              <div className="space-y-0.5 text-xs text-[#6B6B72]">
-                {["#햇살맛집", "#코지한", "#디저트맛집", "#대형카페"].map((tag) => (
-                  <button
-                    key={tag}
-                    className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-white font-medium transition"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-3 border border-[#EBEAE4] shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+            <div className="relative">
               <img
                 src={profile.profileImage}
                 alt={profile.nickname}
-                className="size-8 rounded-full object-cover border border-slate-200"
+                className="size-20 rounded-full object-cover border-4 border-[#EDFAF4] shadow-md"
               />
-              <div>
-                <h5 className="text-xs font-bold text-[#18181B]">{profile.nickname}</h5>
-                <p className="text-[10px] text-[#8C8C94]">마이페이지</p>
-              </div>
             </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-center gap-1.5">
+                <h3 className="text-base font-bold text-[#18181B]">{profile.nickname}</h3>
+                <span className="text-[10px] font-bold text-[#1A9E7A] bg-[#EDFAF4] px-2 py-0.5 rounded-full">
+                  여행 메이트
+                </span>
+              </div>
+              <p className="text-xs text-[#8C8C94]">{profile.email}</p>
+            </div>
+
+            <p className="text-xs text-[#6B6B72] leading-relaxed pt-1 break-keep">
+              {profile.bio || "함께하는 즐거운 여행을 계획하고 있습니다 🌴"}
+            </p>
+          </div>
+
+          {/* 탭 네비게이션 */}
+          <div className="rounded-3xl bg-white border border-[#EBEAE4] p-3 shadow-sm space-y-1 text-xs font-bold text-[#52525B]">
             <button
-              onClick={() => {
-                authService.logout()
-                router.push("/login")
-              }}
-              className="text-[11px] text-[#A1A1AA] hover:text-red-500 font-semibold transition"
+              onClick={() => setActiveTab("account")}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition ${
+                activeTab === "account" ? "bg-[#EDFAF4] text-[#1A9E7A]" : "hover:bg-slate-50 text-[#6B6B72]"
+              }`}
             >
-              로그아웃
+              <span className="flex items-center gap-2.5">
+                <User className="size-4" /> 계정 및 보안
+              </span>
+              <ChevronRight className="size-4 opacity-60" />
+            </button>
+
+            <button
+              onClick={() => setActiveTab("notifications")}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition ${
+                activeTab === "notifications" ? "bg-[#EDFAF4] text-[#1A9E7A]" : "hover:bg-slate-50 text-[#6B6B72]"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <Mail className="size-4" /> 알림 설정
+              </span>
+              <ChevronRight className="size-4 opacity-60" />
             </button>
           </div>
         </aside>
 
-        {/* 2. 중앙 레이아웃: 프로필 사이드바 + 메인 카드 영역 */}
-        <div className="flex-1 flex flex-col lg:flex-row gap-6">
-          {/* 중앙 좌측: 프로필 카드 및 메뉴 탭 */}
-          <div className="w-full lg:w-80 flex flex-col gap-6 shrink-0">
-            <h1 className="text-2xl font-black tracking-tight text-[#18181B] px-1">마이페이지</h1>
-
-            {/* 프로필 서머리 카드 */}
-            <div className="relative rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm flex flex-col items-center text-center space-y-3">
-              <button
-                onClick={() => setIsEditProfileOpen(true)}
-                className="absolute top-5 right-5 flex items-center gap-1 text-xs font-semibold text-[#6B6B72] hover:text-[#18181B] border border-[#E2E2DA] rounded-lg px-2.5 py-1 bg-white hover:bg-slate-50 transition"
-              >
-                <Edit2 className="size-3" /> 수정
-              </button>
-
-              <div className="relative">
-                <img
-                  src={profile.profileImage}
-                  alt={profile.nickname}
-                  className="size-24 rounded-full object-cover border-4 border-[#FFF5F0] shadow-md"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-center gap-1.5">
-                  <h3 className="text-lg font-bold text-[#18181B]">{profile.nickname}</h3>
-                  <span className="text-[10px] font-bold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-full">
-                    취향 탐험가
-                  </span>
-                </div>
-                <p className="text-xs text-[#8C8C94]">{profile.email}</p>
-              </div>
-
-              <p className="text-xs text-[#6B6B72] leading-relaxed pt-1 break-keep">{profile.bio}</p>
-            </div>
-
-            {/* 네비게이션 메뉴 탭 */}
-            <div className="rounded-3xl bg-white border border-[#EBEAE4] p-4 shadow-sm space-y-1 text-xs font-bold text-[#52525B]">
-              <span className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-wider px-3 py-1.5 block">
-                계정 설정 및 정보
-              </span>
-
-              <button
-                onClick={() => router.push("/dashboard")}
-                className="w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-slate-50 transition"
-              >
-                <span className="flex items-center gap-2.5">
-                  <LayoutDashboard className="size-4 text-[#8C8C94]" /> 내 대시보드
-                </span>
-                <ChevronRight className="size-4 text-[#C4C4CC]" />
-              </button>
-
-              <button
-                onClick={() => setActiveTab("appSettings")}
-                className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition ${
-                  activeTab === "appSettings" ? "bg-[#F4F4F5] text-[#18181B]" : "hover:bg-slate-50"
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <Settings className="size-4 text-[#8C8C94]" /> 픽플 설정
-                </span>
-                <ChevronRight className="size-4 text-[#C4C4CC]" />
-              </button>
-
-              <button
-                onClick={() => setActiveTab("account")}
-                className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition ${
-                  activeTab === "account" ? "bg-[#F4F4F5] text-[#18181B]" : "hover:bg-slate-50"
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <User className="size-4 text-[#8C8C94]" /> 계정 설정
-                </span>
-                <ChevronRight className="size-4 text-[#C4C4CC]" />
-              </button>
-
-              <div className="pt-2 border-t border-[#EBEAE4] space-y-1">
-                <button
-                  onClick={() => window.open("/terms", "_blank")}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 transition text-xs font-medium text-[#6B6B72]"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <FileText className="size-4 text-[#8C8C94]" /> 서비스 이용약관
-                  </span>
-                  <span className="text-xs text-[#A1A1AA]">↗</span>
-                </button>
-
-                <button
-                  onClick={() => window.open("/privacy", "_blank")}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 transition text-xs font-medium text-[#6B6B72]"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <ShieldCheck className="size-4 text-[#8C8C94]" /> 개인정보 처리방침
-                  </span>
-                  <span className="text-xs text-[#A1A1AA]">↗</span>
-                </button>
-              </div>
-
-              <button
-                onClick={() => {
-                  authService.logout()
-                  router.push("/login")
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-3 rounded-xl hover:bg-red-50 transition text-xs font-bold text-red-500 pt-3"
-              >
-                <LogOut className="size-4" /> 로그아웃
-              </button>
-            </div>
-          </div>
-
-          {/* 중앙 우측: 설정 콘텐츠 카드들 */}
-          <div className="flex-1 space-y-6 pt-0 lg:pt-9">
-            {activeTab === "account" ? (
-              <>
-                {/* 탭 헤더 */}
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-md">
-                    프로필 및 보안 설정
-                  </span>
-                  <h2 className="text-xl font-black tracking-tight text-[#18181B]">계정 설정</h2>
+        {/* 우측 메인 콘텐츠 영역 */}
+        <main className="flex-1 space-y-6">
+          {activeTab === "account" ? (
+            <>
+              {/* 1. 계정 기본 정보 */}
+              <div className="rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-[#18181B]">계정 기본 정보</h4>
+                  {profile.emailVerified ? (
+                    <span className="text-xs font-bold text-[#1A9E7A] bg-[#EDFAF4] border border-[#A7F3D0] px-3 py-1 rounded-xl flex items-center gap-1">
+                      <CheckCircle2 className="size-3.5" /> 이메일 인증됨
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-[#D97706] bg-[#FFFBEB] border border-[#FDE68A] px-3 py-1 rounded-xl">
+                      이메일 미인증
+                    </span>
+                  )}
                 </div>
 
-                {/* 1. 계정 기본 정보 카드 */}
-                <div className="rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm space-y-3">
-                  <h4 className="text-xs font-bold text-[#18181B]">계정 기본 정보</h4>
-                  <div className="flex items-center justify-between pt-1">
-                    <div>
-                      <span className="text-[11px] text-[#8C8C94] block">이메일 주소</span>
-                      <span className="text-sm font-bold text-[#18181B]">{profile.email}</span>
-                    </div>
-                    {profile.emailVerified ? (
-                      <span className="text-xs font-bold text-[#059669] bg-[#ECFDF5] border border-[#A7F3D0] px-3 py-1.5 rounded-xl flex items-center gap-1">
-                        <CheckCircle2 className="size-3.5" /> 이메일 인증됨
-                      </span>
-                    ) : (
-                      <span className="text-xs font-bold text-[#D97706] bg-[#FFFBEB] border border-[#FDE68A] px-3 py-1.5 rounded-xl">
-                        이메일 미인증
-                      </span>
-                    )}
+                <div className="grid sm:grid-cols-2 gap-4 pt-1">
+                  <div className="rounded-2xl bg-[#F8F9FA] p-3.5 border border-[#EBEAE4]">
+                    <span className="text-[11px] text-[#8C8C94] block mb-0.5">이메일 주소</span>
+                    <span className="text-xs font-bold text-[#18181B]">{profile.email}</span>
+                  </div>
+                  <div className="rounded-2xl bg-[#F8F9FA] p-3.5 border border-[#EBEAE4]">
+                    <span className="text-[11px] text-[#8C8C94] block mb-0.5">닉네임</span>
+                    <span className="text-xs font-bold text-[#18181B]">{profile.nickname}</span>
                   </div>
                 </div>
+              </div>
 
-                {/* 2. 이메일 본인 인증 카드 (미인증 시 또는 발송 중 시 노출) */}
-                {!profile.emailVerified && (
-                  <div className="rounded-3xl bg-[#FFF8F5] border border-[#FFD9CC] p-6 shadow-sm space-y-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">✉️</span>
-                      <h4 className="text-sm font-bold text-[#FF5A36]">이메일 본인 인증</h4>
-                    </div>
+              {/* 2. 이메일 본인 인증 카드 (미인증 시) */}
+              {!profile.emailVerified && (
+                <div className="rounded-3xl bg-[#F0FAF7] border border-[#BDEBDC] p-6 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-7 items-center justify-center rounded-lg bg-[#1A9E7A] text-white">
+                      <Mail className="size-4" />
+                    </span>
+                    <h4 className="text-sm font-bold text-[#1A9E7A]">이메일 본인 인증</h4>
+                  </div>
 
-                    <p className="text-xs text-[#6B6B72] leading-relaxed break-keep">
-                      현재 계정은 이메일 인증이 완료되지 않았습니다. 인증을 완료하시면 프로필 설정 수정 권한이
-                      부여되며 소셜 다중 통합 계정을 안전하게 연동하실 수 있습니다.
-                    </p>
+                  <p className="text-xs text-[#4A5568] leading-relaxed break-keep">
+                    계정 보안 및 여행 초대/동선 투표 참여를 위해 이메일 본인 인증을 완료해주세요.
+                    인증 코드는 터미널 콘솔 로그(또는 실제 SMTP 메일)로 전송됩니다.
+                  </p>
 
-                    {isVerificationSent ? (
-                      /* 발송 진행 중 카드 (스크린샷 4) */
-                      <div className="space-y-3 pt-1">
-                        <div className="rounded-2xl bg-[#FFF0EB] p-3 text-center text-xs font-bold text-[#FF5A36] flex items-center justify-center gap-2">
-                          <span>⏱️ 인증 진행 중 (남은 시간: {formatTimer(timerSeconds)})</span>
-                        </div>
-                        <button
-                          onClick={() => setIsVerifyModalOpen(true)}
-                          className="w-full rounded-2xl bg-[#18181B] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-slate-800 transition shadow-sm"
-                        >
-                          인증 코드 입력하기
-                        </button>
+                  {isVerificationSent ? (
+                    <div className="space-y-3 pt-1">
+                      <div className="rounded-2xl bg-white p-3 text-center text-xs font-bold text-[#1A9E7A] border border-[#A7F3D0] flex items-center justify-center gap-2">
+                        <span>⏱️ 인증 진행 중 (남은 시간: {formatTimer(timerSeconds)})</span>
                       </div>
-                    ) : (
-                      /* 최초 인증하기 버튼 (스크린샷 2) */
                       <button
-                        onClick={handleSendVerification}
-                        disabled={isLoading}
-                        className="w-full rounded-2xl bg-[#FF5A36] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#E04B2B] transition shadow-md shadow-[#FF5A36]/20 disabled:opacity-50"
+                        onClick={() => setIsVerifyModalOpen(true)}
+                        className="w-full rounded-2xl bg-[#1A9E7A] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20"
                       >
-                        {isLoading ? "발송 중..." : "이메일 인증하기"}
+                        6자리 인증 코드 입력하기
                       </button>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleSendVerification}
+                      disabled={isLoading}
+                      className="w-full rounded-2xl bg-[#1A9E7A] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50"
+                    >
+                      {isLoading ? "발송 중..." : "인증 코드 발송하기"}
+                    </button>
+                  )}
+                </div>
+              )}
 
-                {/* 3. 소셜 계정 연동 관리 카드 */}
-                <div className="rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm space-y-4">
+              {/* 3. 소셜 계정 연동 관리 */}
+              <div className="rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm space-y-4">
+                <div>
+                  <h4 className="text-sm font-bold text-[#18181B]">소셜 계정 연동 관리</h4>
+                  <p className="text-[11px] text-[#8C8C94] mt-0.5">
+                    소셜 계정을 연동하면 별도 비밀번호 입력 없이 해당 플랫폼으로 즉시 로그인할 수 있습니다.
+                  </p>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  {/* 네이버 */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl border border-[#EBEAE4] bg-white">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-8 items-center justify-center rounded-full bg-[#03C75A] text-white text-xs font-black">
+                        N
+                      </span>
+                      <span className="text-xs font-bold text-[#18181B]">네이버 계정</span>
+                    </div>
+                    <button
+                      onClick={() => handleToggleSocial("NAVER")}
+                      className={`text-xs font-bold px-3.5 py-1.5 rounded-xl border transition ${
+                        profile.linkedProviders?.includes("NAVER")
+                          ? "border-[#A7F3D0] bg-[#ECFDF5] text-[#059669]"
+                          : "border-[#E2E2DA] bg-white text-[#6B6B72] hover:bg-slate-50"
+                      }`}
+                    >
+                      {profile.linkedProviders?.includes("NAVER") ? "연동됨" : "연동하기"}
+                    </button>
+                  </div>
+
+                  {/* 카카오 */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl border border-[#EBEAE4] bg-white">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-8 items-center justify-center rounded-full bg-[#FEE500] text-[#191919] text-xs font-black">
+                        k
+                      </span>
+                      <span className="text-xs font-bold text-[#18181B]">카카오 계정</span>
+                    </div>
+                    <button
+                      onClick={() => handleToggleSocial("KAKAO")}
+                      className={`text-xs font-bold px-3.5 py-1.5 rounded-xl border transition ${
+                        profile.linkedProviders?.includes("KAKAO")
+                          ? "border-[#A7F3D0] bg-[#ECFDF5] text-[#059669]"
+                          : "border-[#E2E2DA] bg-white text-[#6B6B72] hover:bg-slate-50"
+                      }`}
+                    >
+                      {profile.linkedProviders?.includes("KAKAO") ? "연동됨" : "연동하기"}
+                    </button>
+                  </div>
+
+                  {/* 구글 */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl border border-[#EBEAE4] bg-white">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-[#4285F4] text-xs font-black border border-slate-200">
+                        G
+                      </span>
+                      <span className="text-xs font-bold text-[#18181B]">구글 계정</span>
+                    </div>
+                    <button
+                      onClick={() => handleToggleSocial("GOOGLE")}
+                      className={`text-xs font-bold px-3.5 py-1.5 rounded-xl border transition ${
+                        profile.linkedProviders?.includes("GOOGLE")
+                          ? "border-[#A7F3D0] bg-[#ECFDF5] text-[#059669]"
+                          : "border-[#E2E2DA] bg-white text-[#6B6B72] hover:bg-slate-50"
+                      }`}
+                    >
+                      {profile.linkedProviders?.includes("GOOGLE") ? "연동됨" : "연동하기"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. 비밀번호 변경 */}
+              <div className="rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm space-y-4">
+                <h4 className="text-sm font-bold text-[#18181B]">비밀번호 변경</h4>
+
+                <form onSubmit={handlePasswordChange} className="space-y-3">
                   <div>
-                    <h4 className="text-xs font-bold text-[#18181B]">소셜 계정 연동 관리</h4>
-                    <p className="text-[11px] text-[#8C8C94] mt-0.5">
-                      일반 이메일 계정으로 로그인한 경우, 소셜 계정들을 연동하여 다음 로그인 시 해당 소셜 로그인으로 바로
-                      접속하실 수 있습니다.
-                    </p>
+                    <label className="text-[11px] font-bold text-[#6B6B72] block mb-1">현재 비밀번호</label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="현재 비밀번호 입력"
+                      className="w-full rounded-xl border border-[#E2E2DA] bg-white px-3.5 py-2.5 text-xs outline-none focus:border-[#1A9E7A] transition"
+                    />
                   </div>
 
-                  <div className="space-y-3 pt-1">
-                    {/* 네이버 */}
-                    <div className="flex items-center justify-between p-3 rounded-2xl border border-[#EBEAE4] bg-white">
-                      <div className="flex items-center gap-3">
-                        <span className="flex size-8 items-center justify-center rounded-full bg-[#03C75A] text-white text-xs font-black">
-                          N
-                        </span>
-                        <span className="text-xs font-bold text-[#18181B]">네이버 계정</span>
-                      </div>
-                      <button
-                        onClick={() => handleToggleSocial("NAVER")}
-                        className={`text-xs font-bold px-3.5 py-1.5 rounded-xl border transition ${
-                          profile.linkedProviders?.includes("NAVER")
-                            ? "border-[#A7F3D0] bg-[#ECFDF5] text-[#059669]"
-                            : "border-[#E2E2DA] bg-white text-[#6B6B72] hover:bg-slate-50"
-                        }`}
-                      >
-                        {profile.linkedProviders?.includes("NAVER") ? "연동됨" : "연동하기"}
-                      </button>
-                    </div>
-
-                    {/* 카카오 */}
-                    <div className="flex items-center justify-between p-3 rounded-2xl border border-[#EBEAE4] bg-white">
-                      <div className="flex items-center gap-3">
-                        <span className="flex size-8 items-center justify-center rounded-full bg-[#FEE500] text-[#191919] text-xs font-black">
-                          k
-                        </span>
-                        <span className="text-xs font-bold text-[#18181B]">카카오 계정</span>
-                      </div>
-                      <button
-                        onClick={() => handleToggleSocial("KAKAO")}
-                        className={`text-xs font-bold px-3.5 py-1.5 rounded-xl border transition ${
-                          profile.linkedProviders?.includes("KAKAO")
-                            ? "border-[#A7F3D0] bg-[#ECFDF5] text-[#059669]"
-                            : "border-[#E2E2DA] bg-white text-[#6B6B72] hover:bg-slate-50"
-                        }`}
-                      >
-                        {profile.linkedProviders?.includes("KAKAO") ? "연동됨" : "연동하기"}
-                      </button>
-                    </div>
-
-                    {/* 구글 */}
-                    <div className="flex items-center justify-between p-3 rounded-2xl border border-[#EBEAE4] bg-white">
-                      <div className="flex items-center gap-3">
-                        <span className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-[#4285F4] text-xs font-black border border-slate-200">
-                          G
-                        </span>
-                        <span className="text-xs font-bold text-[#18181B]">구글 계정</span>
-                      </div>
-                      <button
-                        onClick={() => handleToggleSocial("GOOGLE")}
-                        className={`text-xs font-bold px-3.5 py-1.5 rounded-xl border transition ${
-                          profile.linkedProviders?.includes("GOOGLE")
-                            ? "border-[#A7F3D0] bg-[#ECFDF5] text-[#059669]"
-                            : "border-[#E2E2DA] bg-white text-[#6B6B72] hover:bg-slate-50"
-                        }`}
-                      >
-                        {profile.linkedProviders?.includes("GOOGLE") ? "연동됨" : "연동하기"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. 비밀번호 변경 카드 */}
-                <div className="rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm space-y-4">
-                  <h4 className="text-xs font-bold text-[#18181B]">비밀번호 변경</h4>
-
-                  <form onSubmit={handlePasswordChange} className="space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[11px] font-bold text-[#6B6B72] block mb-1">현재 비밀번호</label>
+                      <label className="text-[11px] font-bold text-[#6B6B72] block mb-1">새 비밀번호</label>
                       <input
                         type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="현재 비밀번호 입력"
-                        className="w-full rounded-xl border border-[#E2E2DA] bg-white px-3.5 py-2.5 text-xs outline-none focus:border-[#FF5A36] transition"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="8자 이상 영문+숫자"
+                        className="w-full rounded-xl border border-[#E2E2DA] bg-white px-3.5 py-2.5 text-xs outline-none focus:border-[#1A9E7A] transition"
                       />
                     </div>
-
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-bold text-[#6B6B72] block mb-1">새 비밀번호</label>
-                        <input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="새 비밀번호 입력"
-                          className="w-full rounded-xl border border-[#E2E2DA] bg-white px-3.5 py-2.5 text-xs outline-none focus:border-[#FF5A36] transition"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-[#6B6B72] block mb-1">새 비밀번호 확인</label>
-                        <input
-                          type="password"
-                          value={newPasswordConfirm}
-                          onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                          placeholder="새 비밀번호 다시 입력"
-                          className="w-full rounded-xl border border-[#E2E2DA] bg-white px-3.5 py-2.5 text-xs outline-none focus:border-[#FF5A36] transition"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-1">
-                      <button
-                        type="submit"
-                        disabled={isLoading || !newPassword}
-                        className="rounded-xl bg-[#18181B] px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition disabled:opacity-40"
-                      >
-                        비밀번호 변경하기
-                      </button>
-                    </div>
-                  </form>
-                </div>
-
-                {/* 5. 로그인 기록 카드 (스크린샷 3) */}
-                <div className="space-y-3">
-                  <div className="space-y-0.5">
-                    <h4 className="text-xs font-bold text-[#18181B]">로그인 기록</h4>
-                    <p className="text-[11px] text-[#8C8C94]">현재 로그인되어 있는 기기 및 세션 정보입니다.</p>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {/* 세션 1: Safari mac */}
-                    <div className="rounded-2xl bg-white border border-[#EBEAE4] p-4 flex items-center justify-between shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <span className="flex size-10 items-center justify-center rounded-xl bg-[#F4F4F5] text-[#6B6B72]">
-                          <Laptop className="size-5" />
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[#18181B]">Seoul</span>
-                          </div>
-                          <p className="text-[11px] text-[#8C8C94]">14분 전 • Safari • macOS</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => showToast("해당 원격 세션이 로그아웃되었습니다.")}
-                        className="text-xs font-bold text-[#FF5A36] bg-[#FFF5F0] hover:bg-[#FFEAE0] border border-[#FFD9CC] rounded-xl px-3.5 py-1.5 transition flex items-center gap-1"
-                      >
-                        <LogOut className="size-3.5" /> 로그아웃
-                      </button>
-                    </div>
-
-                    {/* 세션 2: 현재 기기 Chrome Windows */}
-                    <div className="rounded-2xl bg-white border border-[#EBEAE4] p-4 flex items-center justify-between shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <span className="flex size-10 items-center justify-center rounded-xl bg-[#F4F4F5] text-[#6B6B72]">
-                          <Laptop className="size-5" />
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[#18181B]">Seoul</span>
-                            <span className="text-[10px] font-bold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-full">
-                              현재 기기
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-[#8C8C94]">13분 전 • Chrome • Windows</p>
-                        </div>
-                      </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-[#6B6B72] block mb-1">새 비밀번호 확인</label>
+                      <input
+                        type="password"
+                        value={newPasswordConfirm}
+                        onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                        placeholder="새 비밀번호 다시 입력"
+                        className="w-full rounded-xl border border-[#E2E2DA] bg-white px-3.5 py-2.5 text-xs outline-none focus:border-[#1A9E7A] transition"
+                      />
                     </div>
                   </div>
-                </div>
-              </>
-            ) : (
-              /* 픽플 어플리케이션 설정 탭 (스크린샷 1) */
-              <>
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-md">
-                    어플리케이션 설정
-                  </span>
-                  <h2 className="text-xl font-black tracking-tight text-[#18181B]">픽플 설정</h2>
-                </div>
 
-                <div className="rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm space-y-6">
-                  {/* 기본 스크랩 폴더 설정 */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-[#18181B]">기본 스크랩 폴더 설정</label>
-                    <select
-                      value={selectedFolder}
-                      onChange={(e) => setSelectedFolder(e.target.value)}
-                      className="w-full rounded-2xl border border-[#E2E2DA] bg-[#FAFAFA] px-4 py-3 text-xs font-semibold text-[#18181B] outline-none"
+                  <div className="pt-1">
+                    <button
+                      type="submit"
+                      disabled={isLoading || !newPassword}
+                      className="rounded-xl bg-[#1A9E7A] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#158063] transition disabled:opacity-40"
                     >
-                      <option value="기본 저장소">기본 저장소</option>
-                      <option value="제주도 여행 폴더">제주도 여행 폴더</option>
-                      <option value="맛집 모음집">맛집 모음집</option>
-                    </select>
+                      비밀번호 변경하기
+                    </button>
                   </div>
+                </form>
+              </div>
+            </>
+          ) : (
+            /* 알림 설정 탭 */
+            <div className="rounded-3xl bg-white border border-[#EBEAE4] p-6 shadow-sm space-y-6">
+              <h4 className="text-sm font-bold text-[#18181B]">여행 알림 설정</h4>
 
-                  {/* 픽플 어플리케이션 테마 */}
-                  <div className="space-y-2.5">
-                    <label className="text-xs font-bold text-[#18181B]">픽플 어플리케이션 테마</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {[
-                        { name: "기본 테마", dot: "bg-orange-500" },
-                        { name: "차분한 샌드", dot: "bg-amber-200" },
-                        { name: "세이지 그린", dot: "bg-emerald-300" },
-                        { name: "웜 코랄", dot: "bg-rose-300" },
-                      ].map((th) => (
-                        <button
-                          key={th.name}
-                          onClick={() => setSelectedTheme(th.name)}
-                          className={`flex items-center justify-center gap-2 rounded-2xl border py-3 px-3 text-xs font-bold transition ${
-                            selectedTheme === th.name
-                              ? "border-[#FF5A36] text-[#FF5A36] bg-[#FFF5F0]"
-                              : "border-[#E2E2DA] text-[#6B6B72] hover:bg-slate-50"
-                          }`}
-                        >
-                          <span className={`size-2.5 rounded-full ${th.dot}`} />
-                          {th.name}
-                        </button>
-                      ))}
-                    </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-2xl border border-[#EBEAE4]">
+                  <div>
+                    <h5 className="text-xs font-bold text-[#18181B]">실시간 동선 투표 알림</h5>
+                    <p className="text-[11px] text-[#8C8C94]">메이트가 새로운 장소 투표를 올렸을 때 알림 수신</p>
                   </div>
-
-                  {/* 알림 수신 설정 */}
-                  <div className="space-y-4 pt-2 border-t border-[#EBEAE4]">
-                    <span className="text-[11px] font-bold text-[#8C8C94] uppercase tracking-wider block">
-                      알림 수신 설정
-                    </span>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="text-xs font-bold text-[#18181B]">새로운 추천 테마 알림</h5>
-                        <p className="text-[11px] text-[#8C8C94]">날씨, 계절 및 감성 공간 추천 푸시 알림 수신</p>
-                      </div>
-                      <button
-                        onClick={() => setThemeNotif(!themeNotif)}
-                        className={`w-11 h-6 flex items-center rounded-full p-1 transition duration-300 ${
-                          themeNotif ? "bg-[#FF5A36]" : "bg-slate-300"
-                        }`}
-                      >
-                        <div
-                          className={`bg-white size-4 rounded-full shadow-md transform transition duration-300 ${
-                            themeNotif ? "translate-x-5" : ""
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="text-xs font-bold text-[#18181B]">공동 플래너 활동 알림</h5>
-                        <p className="text-[11px] text-[#8C8C94]">친구와 공유 중인 플래너 실시간 변동 알림 수신</p>
-                      </div>
-                      <button
-                        onClick={() => setPlannerNotif(!plannerNotif)}
-                        className={`w-11 h-6 flex items-center rounded-full p-1 transition duration-300 ${
-                          plannerNotif ? "bg-[#FF5A36]" : "bg-slate-300"
-                        }`}
-                      >
-                        <div
-                          className={`bg-white size-4 rounded-full shadow-md transform transition duration-300 ${
-                            plannerNotif ? "translate-x-5" : ""
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => setTripVoteNotif(!tripVoteNotif)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition duration-300 ${
+                      tripVoteNotif ? "bg-[#1A9E7A]" : "bg-slate-300"
+                    }`}
+                  >
+                    <div
+                      className={`bg-white size-4 rounded-full shadow-md transform transition duration-300 ${
+                        tripVoteNotif ? "translate-x-5" : ""
+                      }`}
+                    />
+                  </button>
                 </div>
-              </>
-            )}
-          </div>
-        </div>
+
+                <div className="flex items-center justify-between p-3 rounded-2xl border border-[#EBEAE4]">
+                  <div>
+                    <h5 className="text-xs font-bold text-[#18181B]">새로운 여행 방 초대 알림</h5>
+                    <p className="text-[11px] text-[#8C8C94]">초대 코드로 여행 그룹에 초대되었을 때 알림 수신</p>
+                  </div>
+                  <button
+                    onClick={() => setTripInviteNotif(!tripInviteNotif)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition duration-300 ${
+                      tripInviteNotif ? "bg-[#1A9E7A]" : "bg-slate-300"
+                    }`}
+                  >
+                    <div
+                      className={`bg-white size-4 rounded-full shadow-md transform transition duration-300 ${
+                        tripInviteNotif ? "translate-x-5" : ""
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
 
-      {/* 🍊 스마트 6자리 OTP 인증 번호 입력 모달 (스크린샷 5) */}
-      {isVerifyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl border border-[#E2E2DA] bg-white p-7 sm:p-8 shadow-2xl space-y-6 text-center">
-            <button
-              onClick={() => setIsVerifyModalOpen(false)}
-              className="absolute top-5 right-5 flex size-8 items-center justify-center rounded-full hover:bg-slate-100 transition text-[#8C8C94]"
-            >
-              <X className="size-4" />
-            </button>
-
-            {/* 오렌지 심볼 */}
-            <div className="text-4xl pt-1">🍊</div>
-
-            <div className="space-y-1.5">
-              <h3 className="text-xl font-extrabold text-[#18181B] tracking-tight">인증 번호 입력</h3>
-              <p className="text-xs text-[#6B6B72] leading-relaxed break-keep">
-                가입하신 이메일(<span className="font-bold text-[#18181B]">{profile.email}</span>)로 인증번호가
-                발송되었습니다. 아래에 6자리 코드를 입력해주세요.
-              </p>
-            </div>
-
-            {/* OTP 라벨 & 5분 타이머 뱃지 */}
-            <div className="space-y-3 text-left">
-              <div className="flex items-center justify-between text-xs font-bold text-[#18181B]">
-                <span>인증 번호 입력</span>
-                <span className="text-[#FF5A36] bg-[#FFF0EB] px-2.5 py-0.5 rounded-full text-[11px] font-bold">
-                  ⏱️ {formatTimer(timerSeconds)}
-                </span>
-              </div>
-
-              {/* 6개의 스마트 OTP 입력 박스 (복사-붙여넣기 완벽 지원) */}
-              <div className="grid grid-cols-6 gap-2 sm:gap-2.5" onPaste={handleOtpPaste}>
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => {
-                      otpInputsRef.current[index] = el
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="size-12 sm:size-13 text-center text-xl font-extrabold text-[#18181B] rounded-2xl border-2 border-[#E2E2DA] bg-[#FAFAFA] focus:border-[#FF5A36] focus:bg-white focus:outline-none transition"
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* 인증 완료 액션 버튼 */}
-            <button
-              onClick={handleVerifySubmit}
-              disabled={isLoading || otp.join("").length !== 6}
-              className="w-full rounded-2xl bg-[#6B7280] py-3.5 text-sm font-bold text-white hover:bg-[#4B5563] transition shadow-md disabled:opacity-40"
-            >
-              {isLoading ? "확인 중..." : "인증 완료"}
-            </button>
-
-            {/* 하단 재발송 안내 (30초 쿨다운 & 최대 5회) */}
-            <div className="pt-2 text-center text-xs text-[#8C8C94] space-y-1">
-              <p>이메일을 받지 못하셨나요?</p>
-              <button
-                onClick={handleSendVerification}
-                disabled={resendCooldown > 0 || resendCount > 5}
-                className="font-bold text-[#FF5A36] hover:underline disabled:opacity-40"
-              >
-                {resendCooldown > 0
-                  ? `인증번호 다시 보내기 (${resendCooldown}초)`
-                  : resendCount > 5
-                  ? "재발송 횟수 초과"
-                  : "인증번호 다시 보내기"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 프로필 수정 모달 */}
+      {/* 1. 프로필 수정 모달 */}
       {isEditProfileOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl border border-[#E2E2DA] bg-white p-7 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-[#EBEAE4] pb-3">
-              <h3 className="text-base font-bold text-[#18181B]">프로필 정보 수정</h3>
-              <button
-                onClick={() => setIsEditProfileOpen(false)}
-                className="flex size-8 items-center justify-center rounded-full hover:bg-slate-100 transition text-[#8C8C94]"
-              >
+              <h3 className="text-sm font-bold text-[#18181B]">프로필 정보 수정</h3>
+              <button onClick={() => setIsEditProfileOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="size-4" />
               </button>
             </div>
 
-            <form onSubmit={handleProfileUpdate} className="space-y-4">
+            <form onSubmit={handleProfileUpdate} className="space-y-4 text-xs">
               <div>
-                <label className="text-xs font-bold text-[#6B6B72] block mb-1">닉네임</label>
+                <label className="text-[11px] font-bold text-[#6B6B72] block mb-1">닉네임</label>
                 <input
                   type="text"
                   value={editNickname}
                   onChange={(e) => setEditNickname(e.target.value)}
-                  className="w-full rounded-xl border border-[#E2E2DA] px-3.5 py-2.5 text-xs outline-none focus:border-[#FF5A36] transition"
+                  className="w-full rounded-xl border border-[#E2E2DA] px-3.5 py-2.5 outline-none focus:border-[#1A9E7A] transition"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[#6B6B72] block mb-1">한 줄 소개</label>
+                <label className="text-[11px] font-bold text-[#6B6B72] block mb-1">한 줄 소개</label>
                 <textarea
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
                   rows={3}
-                  className="w-full rounded-xl border border-[#E2E2DA] px-3.5 py-2 text-xs outline-none focus:border-[#FF5A36] transition resize-none"
+                  className="w-full rounded-xl border border-[#E2E2DA] px-3.5 py-2.5 outline-none focus:border-[#1A9E7A] transition resize-none"
                 />
               </div>
 
-              <div className="pt-2 flex gap-2">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsEditProfileOpen(false)}
-                  className="flex-1 rounded-xl border border-[#E2E2DA] py-2.5 text-xs font-bold text-[#6B6B72] hover:bg-slate-50 transition"
+                  className="rounded-xl border border-[#E2E2DA] px-4 py-2 text-xs font-semibold hover:bg-slate-50 transition"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 rounded-xl bg-[#18181B] py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition"
+                  className="rounded-xl bg-[#1A9E7A] px-5 py-2 text-xs font-bold text-white hover:bg-[#158063] transition"
                 >
-                  저장하기
+                  저장
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* 2. 6박스 스마트 OTP 이메일 인증 모달 */}
+      {isVerifyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200 text-center">
+            <div className="flex justify-end">
+              <button onClick={() => setIsVerifyModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="size-12 rounded-2xl bg-[#EDFAF4] text-[#1A9E7A] flex items-center justify-center mx-auto">
+              <Mail className="size-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-[#18181B]">이메일 본인 인증</h3>
+              <p className="text-xs text-[#6B6B72]">
+                <strong className="text-[#18181B]">{profile.email}</strong> 으로 전송된 6자리 번호를 입력해주세요.
+              </p>
+            </div>
+
+            {/* 6박스 OTP 핀 입력 */}
+            <div className="flex justify-center gap-2 py-2" onPaste={handleOtpPaste}>
+              {otp.map((digit, idx) => (
+                <input
+                  key={idx}
+                  ref={(el) => {
+                    otpInputsRef.current[idx] = el
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(idx, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                  className="size-11 rounded-xl border border-[#E2E2DA] text-center text-lg font-bold text-[#18181B] outline-none focus:border-[#1A9E7A] focus:ring-2 focus:ring-[#1A9E7A]/20 transition"
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-[#8C8C94] px-1">
+              <span>남은 시간: <strong className="text-[#1A9E7A]">{formatTimer(timerSeconds)}</strong></span>
+              <button
+                onClick={handleSendVerification}
+                disabled={resendCooldown > 0}
+                className="text-[#1A9E7A] hover:underline font-semibold disabled:opacity-40"
+              >
+                {resendCooldown > 0 ? `${resendCooldown}초 후 재발송` : "인증번호 재발송"}
+              </button>
+            </div>
+
+            <button
+              onClick={handleVerifySubmit}
+              disabled={isLoading || otp.join("").length < 6}
+              className="w-full rounded-2xl bg-[#1A9E7A] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50"
+            >
+              인증 완료
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 푸터 */}
+      <footer className="w-full border-t border-[#E2E2DA] bg-white py-4 text-center text-xs text-[#8C8C94]">
+        © 2026 WanderMap. All rights reserved.
+      </footer>
     </div>
   )
 }

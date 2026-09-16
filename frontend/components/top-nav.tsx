@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, MapPin, Plane, UserPlus, Home } from "lucide-react"
+import { Check, MapPin, Plane, UserPlus, Home, User } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { TRIP } from "@/lib/trip-data"
