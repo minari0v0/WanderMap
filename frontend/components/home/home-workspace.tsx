@@ -162,7 +162,8 @@ export function HomeWorkspace() {
   const [places, setPlaces] = useState<WorkspacePlace[]>(TOKYO_PLACES)
   const [activePlaceId, setActivePlaceId] = useState<string | null>("p2")
   const [copied, setCopied] = useState(false)
-  const [toastMsg, setToastMsg] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ msg: string; visible: boolean } | null>(null)
+  const toastTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
   const [chatInput, setChatInput] = useState("")
 
   useEffect(() => {
@@ -186,8 +187,14 @@ export function HomeWorkspace() {
   }, [])
 
   function showToast(msg: string) {
-    setToastMsg(msg)
-    setTimeout(() => setToastMsg(null), 3000)
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    setToast({ msg, visible: true })
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((prev) => (prev ? { ...prev, visible: false } : null))
+      setTimeout(() => setToast(null), 350)
+    }, 2500)
   }
 
   // 1. 새 플랜 만들기 (Stage 1으로 리셋)
@@ -326,10 +333,16 @@ export function HomeWorkspace() {
 
   return (
     <div className="flex h-screen w-full bg-[#FAF9F5] text-[#18181B] font-sans overflow-hidden">
-      {/* 토스트 알림 */}
-      {toastMsg && (
-        <div className="fixed top-6 right-6 z-50 rounded-2xl bg-[#18181B] text-white px-5 py-3 text-xs font-semibold shadow-2xl animate-in fade-in slide-in-from-top-4 duration-200">
-          {toastMsg}
+      {/* 부드러운 불투명도 0 -> 100 -> 0 트랜지션 토스트 (화면 상단 중앙) */}
+      {toast && (
+        <div
+          className={`fixed top-8 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-[#18181B]/95 backdrop-blur-md text-white px-6 py-3.5 text-xs sm:text-sm font-semibold shadow-2xl transition-all duration-300 pointer-events-none flex items-center gap-2 border border-white/10 ${
+            toast.visible
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 -translate-y-4 scale-95"
+          }`}
+        >
+          <span>{toast.msg}</span>
         </div>
       )}
 

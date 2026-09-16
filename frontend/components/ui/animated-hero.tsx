@@ -67,7 +67,7 @@ export function Hero() {
       {/* 체크포인트 */}
       <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#E2E2DA]/60 text-xs text-[#52525B]">
         <div className="flex items-center gap-1.5 font-medium">
-          <Check className="size-3.5 text-[#1A9E7A] stroke-[3]" /> 카카오 간편 로그인
+          <Check className="size-3.5 text-[#1A9E7A] stroke-[3]" /> 3초 간편 로그인
         </div>
         <div className="flex items-center gap-1.5 font-medium">
           <Check className="size-3.5 text-[#1A9E7A] stroke-[3]" /> 실시간 과반수 투표

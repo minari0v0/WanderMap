@@ -332,13 +332,13 @@ export default function MyPage() {
         </div>
       </header>
 
-      {/* 부드러운 불투명도 0 -> 100 -> 0 트랜지션 토스트 (화면 하단 중앙) */}
+      {/* 부드러운 불투명도 0 -> 100 -> 0 트랜지션 토스트 (화면 상단 중앙) */}
       {toast && (
         <div
-          className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-[#18181B]/95 backdrop-blur-md text-white px-6 py-3.5 text-xs sm:text-sm font-semibold shadow-2xl transition-all duration-300 pointer-events-none flex items-center gap-2 border border-white/10 ${
+          className={`fixed top-8 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-[#18181B]/95 backdrop-blur-md text-white px-6 py-3.5 text-xs sm:text-sm font-semibold shadow-2xl transition-all duration-300 pointer-events-none flex items-center gap-2 border border-white/10 ${
             toast.visible
               ? "opacity-100 translate-y-0 scale-100"
-              : "opacity-0 translate-y-2 scale-95"
+              : "opacity-0 -translate-y-4 scale-95"
           }`}
         >
           <span>{toast.msg}</span>
