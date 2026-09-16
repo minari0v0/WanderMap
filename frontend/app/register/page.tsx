@@ -136,7 +136,7 @@ export default function RegisterPage() {
                       type="text"
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
-                      placeholder="닉네임 입력 (2~10자)"
+                      placeholder="닉네임 입력"
                       maxLength={10}
                       className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
                         nickname && !NICKNAME_REGEX.test(nickname)
@@ -164,7 +164,7 @@ export default function RegisterPage() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
+                      placeholder="이메일 입력"
                       className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
                         email && !EMAIL_REGEX.test(email)
                           ? "border-red-400 focus:border-red-500"
@@ -189,7 +189,7 @@ export default function RegisterPage() {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="8~20자 영문과 숫자 조합"
+                      placeholder="비밀번호 입력"
                       maxLength={20}
                       className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
                         password && !PASSWORD_REGEX.test(password)
