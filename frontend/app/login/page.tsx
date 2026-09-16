@@ -32,10 +32,11 @@ export default function LoginPage() {
       setIsLoading(true)
       setLoginMethod("Email")
       await authService.login({ email, password })
-      router.push("/mypage")
+      router.push("/")
     } catch (err: any) {
       const msg =
         err.response?.data?.message ||
+        (typeof err.response?.data === "string" ? err.response?.data : null) ||
         err.message ||
         "로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요."
       setErrorMsg(msg)

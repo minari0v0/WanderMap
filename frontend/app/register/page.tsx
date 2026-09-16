@@ -83,9 +83,13 @@ export default function RegisterPage() {
         password,
         passwordConfirm,
       })
-      router.push("/mypage")
+      router.push("/")
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || "회원가입 처리 중 오류가 발생했습니다."
+      const msg =
+        err.response?.data?.message ||
+        (typeof err.response?.data === "string" ? err.response?.data : null) ||
+        err.message ||
+        "회원가입 처리 중 오류가 발생했습니다."
       setErrorMsg(msg)
     } finally {
       setIsLoading(false)
