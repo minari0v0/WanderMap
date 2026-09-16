@@ -3,29 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { GradientBackground } from "@/components/ui/jade-sky"
-import { SignInPage, type Testimonial } from "@/components/ui/sign-in"
+import { SignInPage } from "@/components/ui/sign-in"
 import { X, ShieldCheck, FileText } from "lucide-react"
-
-const wanderMapTestimonials: Testimonial[] = [
-  {
-    avatarSrc: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    name: "이지은",
-    handle: "@jieun_travel",
-    text: "친구 4명이서 제주도 3박 4일 일정 짤 때 매번 싸웠는데, WanderMap 실시간 투표로 10분 만에 코스 확정했어요!"
-  },
-  {
-    avatarSrc: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    name: "박민호",
-    handle: "@minho_journey",
-    text: "AI가 멤버들 취향 분석해서 네이버 실데이터로 이동 동선 묶어주는 게 진짜 사기네요. 엑셀 쓸 일 없습니다."
-  },
-  {
-    avatarSrc: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-    name: "김수현",
-    handle: "@suhyun_trips",
-    text: "비회원 친구한테 링크 하나만 툭 보내도 완성된 지도를 깔끔하게 뷰어로 볼 수 있어서 너무 편해요."
-  },
-]
 
 export default function LoginPage() {
   const router = useRouter()
@@ -88,7 +67,6 @@ export default function LoginPage() {
             "/images/login/china.jpg",
             "/images/login/seoul.jpg",
           ]}
-          testimonials={wanderMapTestimonials}
           onSignIn={handleSignIn}
           onGoogleSignIn={handleGoogleSignIn}
           onKakaoSignIn={handleKakaoSignIn}
