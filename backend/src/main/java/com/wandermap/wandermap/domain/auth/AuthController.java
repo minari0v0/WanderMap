@@ -22,6 +22,15 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/check-nickname")
+    public ResponseEntity<Map<String, Object>> checkNickname(@RequestParam String nickname) {
+        boolean available = authService.checkNickname(nickname);
+        return ResponseEntity.ok(Map.of(
+                "available", available,
+                "message", available ? "사용 가능한 닉네임입니다." : "이미 사용 중이거나 올바르지 않은 닉네임입니다."
+        ));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);

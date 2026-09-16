@@ -40,9 +40,23 @@ public class UserService {
         user.verifyEmail();
     }
 
+    private static final java.util.regex.Pattern NICKNAME_PATTERN =
+            java.util.regex.Pattern.compile("^[a-zA-Z0-9가-힣]{2,10}$");
+    private static final java.util.regex.Pattern PASSWORD_PATTERN =
+            java.util.regex.Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]{8,20}$");
+
     @Transactional
     public UserProfileResponse updateProfile(Long userId, ProfileUpdateRequest request) {
         User user = getUser(userId);
+        if (request.getNickname() != null && !request.getNickname().isBlank()) {
+            String trimmedNickname = request.getNickname().trim();
+            if (!NICKNAME_PATTERN.matcher(trimmedNickname).matches()) {
+                throw new IllegalArgumentException("닉네임은 2~10자의 한글, 영문, 숫자만 사용 가능합니다.");
+            }
+            if (!trimmedNickname.equals(user.getNickname()) && userRepository.existsByNickname(trimmedNickname)) {
+                throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            }
+        }
         user.updateProfile(request.getNickname(), request.getProfileImage(), request.getBio());
         List<UserSocialAccount> socialAccounts = socialAccountRepository.findByUserId(userId);
         return UserProfileResponse.from(user, socialAccounts);
@@ -51,6 +65,10 @@ public class UserService {
     @Transactional
     public void changePassword(Long userId, PasswordChangeRequest request) {
         User user = getUser(userId);
+
+        if (request.getNewPassword() == null || !PASSWORD_PATTERN.matcher(request.getNewPassword()).matches()) {
+            throw new IllegalArgumentException("새 비밀번호는 8~20자의 영문과 숫자를 조합하여 입력해주세요.");
+        }
 
         if (!request.getNewPassword().equals(request.getNewPasswordConfirm())) {
             throw new IllegalArgumentException("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");

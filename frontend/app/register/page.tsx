@@ -16,25 +16,44 @@ export default function RegisterPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null)
 
+  const NICKNAME_REGEX = /^[a-zA-Z0-9가-힣]{2,10}$/
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,20}$/
+
+  const isNicknameValid = !nickname || NICKNAME_REGEX.test(nickname)
+  const isEmailValid = !email || EMAIL_REGEX.test(email)
+  const isPasswordValid = !password || PASSWORD_REGEX.test(password)
+  const isPasswordMatch = !passwordConfirm || password === passwordConfirm
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrorMsg(null)
+
+    if (!NICKNAME_REGEX.test(nickname.trim())) {
+      setErrorMsg("닉네임은 2~10자의 한글, 영문, 숫자만 사용 가능합니다.")
+      return
+    }
+
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setErrorMsg("올바른 이메일 형식을 입력해주세요.")
+      return
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      setErrorMsg("비밀번호는 8~20자의 영문과 숫자를 조합하여 입력해주세요.")
+      return
+    }
 
     if (password !== passwordConfirm) {
       setErrorMsg("비밀번호와 비밀번호 확인이 일치하지 않습니다.")
       return
     }
 
-    if (password.length < 6) {
-      setErrorMsg("비밀번호는 최소 6자 이상이어야 합니다.")
-      return
-    }
-
     try {
       setIsLoading(true)
       await authService.register({
-        nickname,
-        email,
+        nickname: nickname.trim(),
+        email: email.trim(),
         password,
         passwordConfirm,
       })
@@ -90,10 +109,10 @@ export default function RegisterPage() {
               <ArrowRight className="size-3.5" />
             </button>
 
-            <div className="space-y-6 my-auto">
-              <div className="space-y-2">
+            <div className="space-y-5 my-auto">
+              <div className="space-y-1">
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[#18181B]">회원가입</h2>
-                <p className="text-xs sm:text-sm text-[#6B6B72]">간단한 정보 입력으로 WanderMap을 시작하세요.</p>
+                <p className="text-xs text-[#6B6B72]">간단한 정보 입력으로 WanderMap을 시작하세요.</p>
               </div>
 
               {errorMsg && (
@@ -102,18 +121,28 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3.5">
                 {/* 1. 닉네임 */}
                 <div>
-                  <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">닉네임</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-[#6B6B72] uppercase">닉네임</label>
+                    <span className={`text-[10px] font-semibold ${nickname && !NICKNAME_REGEX.test(nickname) ? "text-red-500" : "text-[#8C8C94]"}`}>
+                      2~10자 한글/영문/숫자
+                    </span>
+                  </div>
                   <div className="relative flex items-center">
                     <User className="absolute left-3.5 size-4 text-[#9E9EA4]" />
                     <input
                       type="text"
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
-                      placeholder="닉네임 입력"
-                      className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
+                      placeholder="닉네임 입력 (2~10자)"
+                      maxLength={10}
+                      className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
+                        nickname && !NICKNAME_REGEX.test(nickname)
+                          ? "border-red-400 focus:border-red-500"
+                          : "border-[#E2E2DA] focus:border-[#1A9E7A]"
+                      }`}
                       required
                     />
                   </div>
@@ -121,7 +150,14 @@ export default function RegisterPage() {
 
                 {/* 2. 이메일 */}
                 <div>
-                  <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">이메일</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-[#6B6B72] uppercase">이메일</label>
+                    {email && !EMAIL_REGEX.test(email) && (
+                      <span className="text-[10px] font-semibold text-red-500">
+                        올바른 이메일 형식을 입력하세요
+                      </span>
+                    )}
+                  </div>
                   <div className="relative flex items-center">
                     <Mail className="absolute left-3.5 size-4 text-[#9E9EA4]" />
                     <input
@@ -129,7 +165,11 @@ export default function RegisterPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="name@example.com"
-                      className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
+                      className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
+                        email && !EMAIL_REGEX.test(email)
+                          ? "border-red-400 focus:border-red-500"
+                          : "border-[#E2E2DA] focus:border-[#1A9E7A]"
+                      }`}
                       required
                     />
                   </div>
@@ -137,15 +177,25 @@ export default function RegisterPage() {
 
                 {/* 3. 비밀번호 */}
                 <div>
-                  <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">비밀번호</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-[#6B6B72] uppercase">비밀번호</label>
+                    <span className={`text-[10px] font-semibold ${password && !PASSWORD_REGEX.test(password) ? "text-red-500" : "text-[#8C8C94]"}`}>
+                      8~20자 영문 + 숫자 조합
+                    </span>
+                  </div>
                   <div className="relative flex items-center">
                     <Lock className="absolute left-3.5 size-4 text-[#9E9EA4]" />
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="6자 이상 비밀번호 입력"
-                      className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
+                      placeholder="8~20자 영문과 숫자 조합"
+                      maxLength={20}
+                      className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
+                        password && !PASSWORD_REGEX.test(password)
+                          ? "border-red-400 focus:border-red-500"
+                          : "border-[#E2E2DA] focus:border-[#1A9E7A]"
+                      }`}
                       required
                     />
                   </div>
@@ -153,7 +203,14 @@ export default function RegisterPage() {
 
                 {/* 4. 비밀번호 확인 */}
                 <div>
-                  <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">비밀번호 확인</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-[#6B6B72] uppercase">비밀번호 확인</label>
+                    {passwordConfirm && (
+                      <span className={`text-[10px] font-semibold ${password === passwordConfirm ? "text-[#1A9E7A]" : "text-red-500"}`}>
+                        {password === passwordConfirm ? "✓ 비밀번호 일치" : "비밀번호 불일치"}
+                      </span>
+                    )}
+                  </div>
                   <div className="relative flex items-center">
                     <Lock className="absolute left-3.5 size-4 text-[#9E9EA4]" />
                     <input
@@ -161,7 +218,12 @@ export default function RegisterPage() {
                       value={passwordConfirm}
                       onChange={(e) => setPasswordConfirm(e.target.value)}
                       placeholder="비밀번호 다시 입력"
-                      className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
+                      maxLength={20}
+                      className={`w-full rounded-xl border bg-white/90 pl-10 pr-3.5 py-2.5 text-xs outline-none transition ${
+                        passwordConfirm && password !== passwordConfirm
+                          ? "border-red-400 focus:border-red-500"
+                          : "border-[#E2E2DA] focus:border-[#1A9E7A]"
+                      }`}
                       required
                     />
                   </div>
@@ -170,7 +232,7 @@ export default function RegisterPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#1A9E7A] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50 mt-2"
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#1A9E7A] py-3 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50 mt-1"
                 >
                   {isLoading ? (
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
