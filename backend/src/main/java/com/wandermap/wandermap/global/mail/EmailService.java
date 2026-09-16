@@ -2,14 +2,12 @@ package com.wandermap.wandermap.global.mail;
 
 import com.wandermap.wandermap.domain.auth.EmailVerification;
 import com.wandermap.wandermap.domain.auth.EmailVerificationRepository;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,7 +94,7 @@ public class EmailService {
 
     private void sendHtmlEmail(String toEmail, String code) {
         String subject = "[WanderMap] 회원가입 이메일 본인 인증 번호 안내";
-        String htmlContent = buildEmailTemplate(code);
+        String content = "[WanderMap] 본인 인증 번호는 [" + code + "] 입니다. (5분 동안 유효)";
 
         // 1. 개발 및 테스트 편의를 위해 콘솔에 인증 코드 즉시 출력
         System.out.println("\n========================================");
@@ -105,18 +103,17 @@ public class EmailService {
 
         // 2. 실제 SMTP 계정 설정 확인
         if (mailSender == null || senderEmail == null || senderEmail.isBlank() || senderEmail.contains("noreply")) {
-            log.info("[SMTP Skip] spring.mail 계정이 미설정되어 이메일 발송을 스킵하고 콘솔 로그로 대체합니다.");
+            log.info("[SMTP Skip] spring.mail 계정이 미설정되어 콘솔 로그로 대체합니다.");
             return;
         }
 
-        // 3. 실제 SMTP 메일 발송
+        // 3. 실제 메일 발송
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(senderEmail);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
+            org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
+            message.setFrom(senderEmail);
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(content);
             mailSender.send(message);
             log.info("[SMTP Success] 이메일 발송 성공: {}", toEmail);
         } catch (Exception e) {
