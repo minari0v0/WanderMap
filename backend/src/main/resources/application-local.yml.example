@@ -1,0 +1,21 @@
+# 로컬 개발용 설정 템플릿
+# 사용법: 이 파일을 복사하여 application-local.yml로 이름을 바꾸고 실제 접속 정보를 입력하세요.
+spring:
+  datasource:
+    url: jdbc:postgresql://<YOUR_NEON_HOST>/wandermap?sslmode=require
+    username: <YOUR_NEON_USERNAME>
+    password: <YOUR_NEON_PASSWORD>
+    driver-class-name: org.postgresql.Driver
+
+  sql:
+    init:
+      mode: never
+
+  data:
+    redis:
+      host: <YOUR_UPSTASH_REDIS_HOST>
+      port: 6379
+      username: default
+      password: <YOUR_UPSTASH_REDIS_PASSWORD>
+      ssl:
+        enabled: true
