@@ -1,44 +1,96 @@
 "use client"
 
-import React from "react"
-import { Compass, Mail, Lock, ArrowRight } from "lucide-react"
+import React, { useState } from "react"
+import { Compass, Mail, Lock, ArrowRight, User as UserIcon, AlertCircle } from "lucide-react"
 import { ImageHoverScrubber } from "./image-hover-scrubber"
 
 export interface SignInPageProps {
   heroImageSrc?: string
   heroImages?: string[]
-  onSignIn?: (e: React.FormEvent<HTMLFormElement>) => void
+  mode?: "signin" | "signup"
+  onModeChange?: (mode: "signin" | "signup") => void
+  onSignIn?: (data: { email: string; password: string }) => void
+  onSignUp?: (data: { nickname: string; email: string; password: string }) => void
   onGoogleSignIn?: () => void
   onKakaoSignIn?: () => void
   onNaverSignIn?: () => void
   onResetPassword?: () => void
-  onCreateAccount?: () => void
   onOpenTerms?: () => void
   onOpenPrivacy?: () => void
   onBack?: () => void
   isLoading?: boolean
   loginMethod?: string | null
+  errorMessage?: string | null
 }
 
 export function SignInPage({
   heroImageSrc = "/images/login/swiss.jpg",
   heroImages,
+  mode: initialMode = "signin",
+  onModeChange,
   onSignIn,
+  onSignUp,
   onGoogleSignIn,
   onKakaoSignIn,
   onNaverSignIn,
   onResetPassword,
-  onCreateAccount,
   onOpenTerms,
   onOpenPrivacy,
   onBack,
   isLoading = false,
   loginMethod = null,
+  errorMessage = null,
 }: SignInPageProps) {
   const images = heroImages && heroImages.length > 0 ? heroImages : [heroImageSrc]
+  const [currentMode, setCurrentMode] = useState<"signin" | "signup">(initialMode)
+
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [nickname, setNickname] = useState("")
+  const [passwordConfirm, setPasswordConfirm] = useState("")
+  const [localError, setLocalError] = useState<string | null>(null)
+
+  const handleToggleMode = (targetMode: "signin" | "signup") => {
+    setCurrentMode(targetMode)
+    setLocalError(null)
+    onModeChange?.(targetMode)
+  }
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLocalError(null)
+
+    if (currentMode === "signup") {
+      if (!nickname.trim()) {
+        setLocalError("닉네임을 입력해 주세요.")
+        return
+      }
+      if (!email.trim()) {
+        setLocalError("이메일을 입력해 주세요.")
+        return
+      }
+      if (password.length < 4) {
+        setLocalError("비밀번호는 최소 4자 이상이어야 합니다.")
+        return
+      }
+      if (password !== passwordConfirm) {
+        setLocalError("비밀번호 확인이 일치하지 않습니다.")
+        return
+      }
+      onSignUp?.({ nickname: nickname.trim(), email: email.trim(), password })
+    } else {
+      if (!email.trim() || !password) {
+        setLocalError("이메일과 비밀번호를 모두 입력해 주세요.")
+        return
+      }
+      onSignIn?.({ email: email.trim(), password })
+    }
+  }
+
+  const displayedError = localError || errorMessage
 
   return (
-    <div className="w-full max-w-5xl mx-auto min-h-[760px] lg:min-h-[820px] rounded-3xl bg-white/90 backdrop-blur-xl shadow-2xl overflow-hidden grid lg:grid-cols-[1.1fr_0.9fr] ring-1 ring-black/5">
+    <div className="w-full max-w-5xl mx-auto min-h-[760px] lg:min-h-[840px] rounded-3xl bg-white/90 backdrop-blur-xl shadow-2xl overflow-hidden grid lg:grid-cols-[1.1fr_0.9fr] ring-1 ring-black/5">
       {/* 좌측: 감성적인 여행 사진 크로스페이드 갤러리 & 호버 스크러버 */}
       <ImageHoverScrubber
         images={images}
@@ -90,10 +142,9 @@ export function SignInPage({
         )}
       </ImageHoverScrubber>
 
-
-      {/* 우측: 세로로 여유롭게 확장된 실제 로그인 레이아웃 */}
-      <div className="relative flex flex-col justify-between py-12 sm:py-16 px-8 sm:px-12 text-[#18181B] bg-white/75">
-        {/* 상단 은은한 뒤로가기/홈 이동 버튼 */}
+      {/* 우측: 실제 로그인/회원가입 폼 레이아웃 */}
+      <div className="relative flex flex-col justify-between py-10 sm:py-14 px-8 sm:px-12 text-[#18181B] bg-white/75">
+        {/* 상단 홈 이동 버튼 */}
         {onBack && (
           <button
             type="button"
@@ -106,7 +157,7 @@ export function SignInPage({
           </button>
         )}
 
-        <div className="space-y-8 my-auto">
+        <div className="space-y-6 my-auto">
           {/* 모바일 상단 로고 */}
           <div className="flex lg:hidden items-center gap-2 mb-2">
             <span className="flex size-8 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white">
@@ -115,12 +166,26 @@ export function SignInPage({
             <span className="text-lg font-black tracking-tight">WanderMap</span>
           </div>
 
-          <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[#18181B]">로그인</h2>
-            <p className="text-xs sm:text-sm text-[#6B6B72]">나만의 여행 지도를 만들고 친구들과 공유하세요.</p>
+          <div className="space-y-1.5">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[#18181B]">
+              {currentMode === "signup" ? "회원가입" : "로그인"}
+            </h2>
+            <p className="text-xs sm:text-sm text-[#6B6B72]">
+              {currentMode === "signup"
+                ? "WanderMap에 가입하고 친구들과 함께 여행을 계획해보세요."
+                : "나만의 여행 지도를 만들고 친구들과 공유하세요."}
+            </p>
           </div>
 
-          {/* 공식 SVG 로고가 적용된 SNS 간편 로그인 버튼들 (카카오, 네이버, 구글 - 로고 위치 100% 수직 일치 정렬) */}
+          {/* 에러 메시지 알림 바 */}
+          {displayedError && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50/90 px-3.5 py-2.5 text-xs text-rose-600 font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+              <AlertCircle className="size-4 shrink-0" />
+              <span>{displayedError}</span>
+            </div>
+          )}
+
+          {/* 공식 SVG 로고가 적용된 SNS 간편 로그인 버튼들 */}
           <div className="space-y-2.5">
             {/* 1. 카카오 공식 SVG 로그인 */}
             <button
@@ -138,7 +203,7 @@ export function SignInPage({
                   </svg>
                 )}
               </span>
-              <span>카카오로 시작하기</span>
+              <span>카카오로 {currentMode === "signup" ? "간편 가입" : "시작하기"}</span>
             </button>
 
             {/* 2. 네이버 공식 SVG 로그인 */}
@@ -157,7 +222,7 @@ export function SignInPage({
                   </svg>
                 )}
               </span>
-              <span>네이버로 시작하기</span>
+              <span>네이버로 {currentMode === "signup" ? "간편 가입" : "시작하기"}</span>
             </button>
 
             {/* 3. 구글 공식 4색 SVG 로그인 */}
@@ -191,25 +256,50 @@ export function SignInPage({
                   </svg>
                 )}
               </span>
-              <span>구글로 시작하기</span>
+              <span>구글로 {currentMode === "signup" ? "간편 가입" : "시작하기"}</span>
             </button>
           </div>
 
-          <div className="relative flex items-center justify-center my-5">
+          <div className="relative flex items-center justify-center my-4">
             <span className="absolute inset-x-0 h-px bg-[#E2E2DA]" />
-            <span className="relative bg-white/90 px-3 text-[11px] font-bold text-[#6B6B72] uppercase">또는 이메일</span>
+            <span className="relative bg-white/90 px-3 text-[11px] font-bold text-[#6B6B72] uppercase">
+              또는 이메일 {currentMode === "signup" ? "회원가입" : "로그인"}
+            </span>
           </div>
 
-          {/* 이메일 로그인 폼 */}
-          <form onSubmit={onSignIn} className="space-y-4">
+          {/* 이메일 로그인 / 회원가입 폼 */}
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            {currentMode === "signup" && (
+              <div>
+                <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">
+                  닉네임
+                </label>
+                <div className="relative flex items-center">
+                  <UserIcon className="absolute left-3.5 size-4 text-[#9E9EA4]" />
+                  <input
+                    name="nickname"
+                    type="text"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="활동할 닉네임 입력 (예: 제주여행자)"
+                    className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">이메일</label>
+              <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">
+                이메일 (ID)
+              </label>
               <div className="relative flex items-center">
                 <Mail className="absolute left-3.5 size-4 text-[#9E9EA4]" />
                 <input
                   name="email"
                   type="email"
-                  defaultValue="tester@wandermap.io"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
                   className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
                   required
@@ -220,34 +310,61 @@ export function SignInPage({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[11px] font-bold text-[#6B6B72] uppercase">비밀번호</label>
-                <button
-                  type="button"
-                  onClick={onResetPassword}
-                  className="text-[11px] text-[#1A9E7A] hover:underline font-semibold"
-                >
-                  비밀번호 찾기
-                </button>
+                {currentMode === "signin" && onResetPassword && (
+                  <button
+                    type="button"
+                    onClick={onResetPassword}
+                    className="text-[11px] text-[#1A9E7A] hover:underline font-semibold"
+                  >
+                    비밀번호 찾기
+                  </button>
+                )}
               </div>
               <div className="relative flex items-center">
                 <Lock className="absolute left-3.5 size-4 text-[#9E9EA4]" />
                 <input
                   name="password"
                   type="password"
-                  defaultValue="********"
-                  placeholder="비밀번호 입력"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={currentMode === "signup" ? "비밀번호 (4자 이상)" : "비밀번호 입력"}
                   className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
                   required
                 />
               </div>
             </div>
 
+            {currentMode === "signup" && (
+              <div>
+                <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">
+                  비밀번호 확인
+                </label>
+                <div className="relative flex items-center">
+                  <Lock className="absolute left-3.5 size-4 text-[#9E9EA4]" />
+                  <input
+                    name="passwordConfirm"
+                    type="password"
+                    value={passwordConfirm}
+                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                    placeholder="비밀번호 다시 입력"
+                    className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#1A9E7A] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50 mt-2"
+              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#1A9E7A] py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50 mt-3"
             >
               {isLoading && loginMethod === "Email" ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : currentMode === "signup" ? (
+                <>
+                  회원가입 완료 <ArrowRight className="size-4" />
+                </>
               ) : (
                 <>
                   로그인 <ArrowRight className="size-4" />
@@ -256,22 +373,37 @@ export function SignInPage({
             </button>
           </form>
 
-          {/* 계정 생성 링크 */}
+          {/* 모드 전환 링크 (회원가입 <-> 로그인) */}
           <div className="text-center pt-1">
-            <span className="text-xs text-[#6B6B72]">계정이 없으신가요? </span>
-            <button
-              type="button"
-              onClick={onCreateAccount}
-              className="text-xs font-bold text-[#1A9E7A] hover:underline"
-            >
-              회원가입
-            </button>
+            {currentMode === "signup" ? (
+              <>
+                <span className="text-xs text-[#6B6B72]">이미 계정이 있으신가요? </span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleMode("signin")}
+                  className="text-xs font-bold text-[#1A9E7A] hover:underline"
+                >
+                  로그인하기
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-[#6B6B72]">계정이 없으신가요? </span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleMode("signup")}
+                  className="text-xs font-bold text-[#1A9E7A] hover:underline"
+                >
+                  회원가입
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* 하단 이용약관 & 개인정보 처리방침 모달 트리거 */}
         <p className="text-center text-[11px] text-[#6B6B72] pt-6 border-t border-[#E2E2DA]/60">
-          로그인 시 WanderMap의{" "}
+          계속 진행할 경우 WanderMap의{" "}
           <button
             type="button"
             onClick={onOpenTerms}

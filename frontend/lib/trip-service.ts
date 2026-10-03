@@ -79,4 +79,12 @@ export const tripService = {
     const response = await apiClient.get<PreferenceResponse[]>(`/api/trips/${tripId}/preferences`)
     return response.data
   },
+
+  getMyTrips: async (userId: number): Promise<TripResponse[]> => {
+    const response = await apiClient.get<TripResponse[]>("/api/trips/my", {
+      params: { userId },
+    })
+    return response.data
+  },
 }
+

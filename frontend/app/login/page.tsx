@@ -1,55 +1,83 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { GradientBackground } from "@/components/ui/jade-sky"
 import { SignInPage } from "@/components/ui/sign-in"
+import { authService } from "@/lib/auth-service"
 import { X, ShieldCheck, FileText } from "lucide-react"
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "signin"
+
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode)
   const [isLoading, setIsLoading] = useState(false)
   const [loginMethod, setLoginMethod] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // 약관 모달 상태
   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null)
 
-  function performLogin(provider: string) {
+  // 1. 실제 이메일 로그인 처리
+  const handleSignIn = async (data: { email: string; password: string }) => {
+    setIsLoading(true)
+    setLoginMethod("Email")
+    setErrorMessage(null)
+
+    try {
+      const user = await authService.login(data)
+      authService.setSession(user)
+      router.push("/")
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || "로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요."
+      setErrorMessage(msg)
+    } finally {
+      setIsLoading(false)
+      setLoginMethod(null)
+    }
+  }
+
+  // 2. 실제 이메일 회원가입 처리
+  const handleSignUp = async (data: { nickname: string; email: string; password: string }) => {
+    setIsLoading(true)
+    setLoginMethod("Email")
+    setErrorMessage(null)
+
+    try {
+      const user = await authService.signup(data)
+      authService.setSession(user)
+      router.push("/")
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || "회원가입에 실패했습니다. 잠시 후 다시 시도해 주세요."
+      setErrorMessage(msg)
+    } finally {
+      setIsLoading(false)
+      setLoginMethod(null)
+    }
+  }
+
+  // SNS 간편 로그인 (OAuth 2.0 공식 연동 전 데모/개발 단계)
+  const handleSocialSignIn = (provider: string) => {
     setIsLoading(true)
     setLoginMethod(provider)
+    setErrorMessage(null)
 
+    // 소셜 로그인 처리 (개발 편의를 위해 임시 계정으로 세션 발급)
     setTimeout(() => {
-      localStorage.setItem("isAuthenticated", "true")
-      localStorage.setItem("userId", "1")
-      localStorage.setItem("nickname", "여행 매니아")
-      localStorage.setItem("email", "tester@wandermap.io")
-      router.push("/dashboard")
-    }, 800)
-  }
-
-  const handleSignIn = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    performLogin("Email")
-  }
-
-  const handleGoogleSignIn = () => {
-    performLogin("Google")
-  }
-
-  const handleKakaoSignIn = () => {
-    performLogin("Kakao")
-  }
-
-  const handleNaverSignIn = () => {
-    performLogin("Naver")
-  }
-
-  const handleResetPassword = () => {
-    alert("테스트 환경에서는 비밀번호 재설정이 비활성화되어 있습니다. 기본 계정으로 로그인해 주세요.")
-  }
-
-  const handleCreateAccount = () => {
-    performLogin("Kakao")
+      authService.setSession({
+        id: 999,
+        email: `${provider.toLowerCase()}_user@wandermap.io`,
+        nickname: `${provider} 여행자`,
+        profileImage: null,
+        bio: "나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.",
+        emailVerified: true,
+        provider: provider.toUpperCase(),
+        createdAt: new Date().toISOString(),
+      })
+      router.push("/")
+    }, 600)
   }
 
   return (
@@ -67,17 +95,20 @@ export default function LoginPage() {
             "/images/login/china.jpg",
             "/images/login/seoul.jpg",
           ]}
+          mode={mode}
+          onModeChange={setMode}
           onSignIn={handleSignIn}
-          onGoogleSignIn={handleGoogleSignIn}
-          onKakaoSignIn={handleKakaoSignIn}
-          onNaverSignIn={handleNaverSignIn}
-          onResetPassword={handleResetPassword}
-          onCreateAccount={handleCreateAccount}
+          onSignUp={handleSignUp}
+          onGoogleSignIn={() => handleSocialSignIn("Google")}
+          onKakaoSignIn={() => handleSocialSignIn("Kakao")}
+          onNaverSignIn={() => handleSocialSignIn("Naver")}
+          onResetPassword={() => alert("비밀번호 재설정 기능은 준비 중입니다.")}
           onOpenTerms={() => setModalType("terms")}
           onOpenPrivacy={() => setModalType("privacy")}
           onBack={() => router.push("/")}
           isLoading={isLoading}
           loginMethod={loginMethod}
+          errorMessage={errorMessage}
         />
       </div>
 
@@ -105,7 +136,7 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* 모달 본문 (간단하고 명확한 요약문) */}
+            {/* 모달 본문 */}
             <div className="max-h-[60vh] overflow-y-auto text-xs text-[#52525B] leading-relaxed space-y-3 pr-1">
               {modalType === "terms" ? (
                 <>
@@ -121,7 +152,7 @@ export default function LoginPage() {
               ) : (
                 <>
                   <p className="font-semibold text-[#18181B]">1. 수집하는 개인정보 항목</p>
-                  <p>WanderMap은 간편 로그인 및 원활한 서비스 제공을 위해 아래 정보를 수집합니다.<br />- 필수 항목: 소셜 계정 고유 ID, 이메일, 닉네임, 프로필 이미지<br />- 선택 항목: 여행 선호도 설문 데이터(음식/활동 카테고리, 메모 등)</p>
+                  <p>WanderMap은 간편 로그인 및 원활한 서비스 제공을 위해 아래 정보를 수집합니다.<br />- 필수 항목: 이메일, 닉네임, 비밀번호(암호화)<br />- 선택 항목: 여행 선호도 설문 데이터(음식/활동 카테고리, 메모 등)</p>
                   
                   <p className="font-semibold text-[#18181B] mt-2">2. 개인정보의 이용 목적</p>
                   <p>- 여행 방 생성 및 초대 멤버 식별<br />- AI 기반 맞춤형 여행지 추천 및 최적 동선 생성<br />- 실시간 투표 집계 및 상태 브로드캐스트</p>
@@ -145,5 +176,13 @@ export default function LoginPage() {
         </div>
       )}
     </GradientBackground>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F7F7F2]" />}>
+      <LoginContent />
+    </Suspense>
   )
 }
