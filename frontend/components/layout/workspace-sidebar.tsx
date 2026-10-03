@@ -13,12 +13,13 @@ import {
   Plane,
   Menu,
   X,
-  Sparkles,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react"
 import { authService, type UserResponse } from "@/lib/auth-service"
 import { tripService, type TripResponse } from "@/lib/trip-service"
+import { Tooltip } from "@/components/ui/tooltip"
+import { AccountSettingsModal } from "@/components/user/account-settings-modal"
 
 export interface WorkspaceSidebarProps {
   currentTripId?: string | number
@@ -39,6 +40,7 @@ export function WorkspaceSidebar({
   const [isLoading, setIsLoading] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
 
   // 1. 세션 및 접힘 상태 로드
   useEffect(() => {
@@ -102,47 +104,52 @@ export function WorkspaceSidebar({
     setIsMobileOpen(false)
   }
 
-  // 데스크톱 사이드바 내부 컨텐츠 (부드럽고 빠른 Gemini 스타일 접기/펼치기)
+  // 데스크톱 사이드바 내부 컨텐츠 (Gemini 스타일 부드러운 반응성)
   const sidebarInner = (
     <aside
       className={`flex h-full flex-col justify-between border-r border-[#E2E2DA] bg-white text-[#18181B] select-none shadow-xs z-10 transition-[width] duration-200 ease-[cubic-bezier(0.2,0,0,1)] will-change-[width] overflow-hidden ${
         isCollapsed ? "w-[68px]" : "w-72"
       }`}
     >
-      {/* 1. 상단: 브랜드 로고 & 새 여행 계획 버튼 */}
-      <div className={`border-b border-[#E2E2DA]/80 transition-all duration-200 ${isCollapsed ? "p-3 space-y-3" : "p-4 space-y-4"}`}>
+      {/* 1. 상단: 브랜드 로고 & 새 여행 계획 버튼 (펼쳤을 때와 접었을 때 Y축이 1px 오차 없이 일치) */}
+      <div className="border-b border-[#E2E2DA]/80 px-4 pt-4 pb-3.5 transition-all duration-200">
         {isCollapsed ? (
-          /* [접힌 상태]: Gemini 스타일 — 평소엔 로고만 보이고, 호버 시 사이드바 열기 아이콘으로 부드럽게 페이드 전환 */
-          <div className="flex flex-col items-center gap-2.5 w-full">
-            <button
-              type="button"
-              onClick={() => toggleCollapse(false)}
-              className="relative flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm shadow-[#1A9E7A]/20 hover:scale-105 transition group cursor-pointer"
-              title="사이드바 열기"
-            >
-              <Compass className="size-4.5 transition-all duration-150 group-hover:opacity-0 group-hover:scale-75" />
-              <PanelLeftOpen className="size-4.5 absolute opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150" />
-            </button>
+          /* [접힌 상태]: Gemini 스타일 — 평소엔 로고만 보이고, 호버 시 사이드바 열기 아이콘으로 부드럽게 전환 */
+          <div className="flex flex-col items-center w-full">
+            <div className="flex h-9 items-center justify-center">
+              <Tooltip content="사이드바 열기" side="right">
+                <button
+                  type="button"
+                  onClick={() => toggleCollapse(false)}
+                  className="relative flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm shadow-[#1A9E7A]/20 hover:scale-105 transition group cursor-pointer"
+                  aria-label="사이드바 열기"
+                >
+                  <Compass className="size-4.5 transition-all duration-150 group-hover:opacity-0 group-hover:scale-75" />
+                  <PanelLeftOpen className="size-4.5 absolute opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150" />
+                </button>
+              </Tooltip>
+            </div>
 
-            <div className="w-8 border-b border-[#E2E2DA] my-0.5" />
+            <div className="w-7 border-b border-[#E2E2DA] my-2.5" />
 
-            <button
-              type="button"
-              onClick={handleOpenCreateTrip}
-              className="flex size-9 items-center justify-center rounded-xl bg-[#EDFAF4] text-[#1A9E7A] hover:bg-[#1A9E7A] hover:text-white transition shadow-xs group cursor-pointer"
-              title="새 여행 계획 만들기"
-            >
-              <Plus className="size-4.5 group-hover:scale-110 transition" />
-            </button>
+            <Tooltip content="새 여행 계획 만들기" side="right">
+              <button
+                type="button"
+                onClick={handleOpenCreateTrip}
+                className="flex size-9 items-center justify-center rounded-xl bg-[#EDFAF4] text-[#1A9E7A] hover:bg-[#1A9E7A] hover:text-white transition shadow-xs group cursor-pointer"
+                aria-label="새 여행 계획 만들기"
+              >
+                <Plus className="size-4.5 group-hover:scale-110 transition" />
+              </button>
+            </Tooltip>
           </div>
         ) : (
-          /* [펼쳐진 상태]: 브랜드 로고 + 사이드바 접기 버튼 */
+          /* [펼쳐진 상태]: 브랜드 로고 + 사이드바 접기 버튼 (Y축 높이 h-9로 접힌 상태와 동일선상 배치) */
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex h-9 items-center justify-between">
               <div
                 onClick={handleNavigateHome}
                 className="flex items-center gap-2.5 cursor-pointer group"
-                title="홈으로 이동"
               >
                 <span className="flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm shadow-[#1A9E7A]/20 group-hover:scale-105 transition shrink-0">
                   <Compass className="size-4.5" />
@@ -152,20 +159,21 @@ export function WorkspaceSidebar({
                 </span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => toggleCollapse(true)}
-                className="flex size-7 items-center justify-center rounded-lg hover:bg-slate-100 text-[#6B6B72] hover:text-[#18181B] transition cursor-pointer"
-                title="사이드바 접기"
-              >
-                <PanelLeftClose className="size-4.5" />
-              </button>
+              <Tooltip content="사이드바 접기" side="right">
+                <button
+                  type="button"
+                  onClick={() => toggleCollapse(true)}
+                  className="flex size-7 items-center justify-center rounded-lg hover:bg-slate-100 text-[#6B6B72] hover:text-[#18181B] transition cursor-pointer"
+                  aria-label="사이드바 접기"
+                >
+                  <PanelLeftClose className="size-4.5" />
+                </button>
+              </Tooltip>
             </div>
 
             <button
               onClick={handleOpenCreateTrip}
-              className="w-full flex items-center justify-between gap-2 rounded-2xl bg-white border border-[#E2E2DA] hover:border-[#1A9E7A] px-3.5 py-2.5 text-xs font-bold text-[#18181B] hover:shadow-sm transition group cursor-pointer animate-in fade-in duration-150"
-              title="새 여행 계획 만들기"
+              className="mt-3.5 w-full flex items-center justify-between gap-2 rounded-2xl bg-white border border-[#E2E2DA] hover:border-[#1A9E7A] px-3.5 py-2.5 text-xs font-bold text-[#18181B] hover:shadow-sm transition group cursor-pointer animate-in fade-in duration-150"
             >
               <div className="flex items-center gap-2 truncate">
                 <span className="flex size-6 items-center justify-center rounded-lg bg-[#EDFAF4] text-[#1A9E7A] group-hover:bg-[#1A9E7A] group-hover:text-white transition shrink-0">
@@ -173,7 +181,6 @@ export function WorkspaceSidebar({
                 </span>
                 <span className="truncate">새 여행 계획 만들기</span>
               </div>
-              <Sparkles className="size-3.5 text-amber-500 shrink-0" />
             </button>
           </>
         )}
@@ -207,19 +214,23 @@ export function WorkspaceSidebar({
 
             if (isCollapsed) {
               return (
-                <button
+                <Tooltip
                   key={trip.id}
-                  type="button"
-                  onClick={() => handleSelectTrip(trip)}
-                  className={`flex size-9 items-center justify-center rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
-                    isCurrent
-                      ? "bg-[#EDFAF4] text-[#1A9E7A] border border-[#1A9E7A] shadow-xs"
-                      : "hover:bg-slate-100 text-[#4A5568]"
-                  }`}
-                  title={`${trip.destination} - ${trip.title}`}
+                  content={`${trip.destination} · ${trip.title}`}
+                  side="right"
                 >
-                  {trip.destination.charAt(0)}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTrip(trip)}
+                    className={`flex size-9 items-center justify-center rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
+                      isCurrent
+                        ? "bg-[#EDFAF4] text-[#1A9E7A] border border-[#1A9E7A] shadow-xs"
+                        : "hover:bg-slate-100 text-[#4A5568]"
+                    }`}
+                  >
+                    {trip.destination.charAt(0)}
+                  </button>
+                </Tooltip>
               )
             }
 
@@ -258,22 +269,28 @@ export function WorkspaceSidebar({
         )}
       </div>
 
-      {/* 3. 하단 고정: 사용자 프로필 & 마이페이지/설정 */}
-      <div className={`border-t border-[#E2E2DA]/80 bg-white transition-all duration-200 ${isCollapsed ? "p-2 flex flex-col items-center" : "p-3 space-y-2"}`}>
+      {/* 3. 하단 고정: 사용자 프로필 & 계정 설정 모달 트리거 */}
+      <div className={`border-t border-[#E2E2DA]/80 bg-white transition-all duration-200 ${isCollapsed ? "p-3 flex flex-col items-center" : "p-3.5 space-y-2"}`}>
         {user ? (
           isCollapsed ? (
-            <div
-              className="size-8 rounded-full bg-[#1A9E7A]/10 border border-[#1A9E7A]/30 flex items-center justify-center text-xs font-bold text-[#1A9E7A] cursor-pointer"
-              title={`${user.nickname} (${user.email})`}
-            >
-              {user.nickname.charAt(0)}
-            </div>
+            <Tooltip content={`${user.nickname} (계정 설정)`} side="right">
+              <button
+                type="button"
+                onClick={() => setIsAccountModalOpen(true)}
+                className="size-9 rounded-full bg-[#1A9E7A]/10 border border-[#1A9E7A]/30 flex items-center justify-center text-xs font-bold text-[#1A9E7A] hover:bg-[#1A9E7A] hover:text-white transition cursor-pointer"
+              >
+                {user.nickname ? user.nickname.charAt(0) : "W"}
+              </button>
+            </Tooltip>
           ) : (
             <div className="space-y-2 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E2E2DA]">
+              <div
+                onClick={() => setIsAccountModalOpen(true)}
+                className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E2E2DA] hover:border-[#1A9E7A]/60 transition cursor-pointer group"
+              >
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="size-7 rounded-full bg-[#1A9E7A]/10 border border-[#1A9E7A]/30 flex items-center justify-center text-xs font-bold text-[#1A9E7A] shrink-0">
-                    {user.nickname.charAt(0)}
+                  <div className="size-7.5 rounded-full bg-[#1A9E7A]/10 border border-[#1A9E7A]/30 flex items-center justify-center text-xs font-bold text-[#1A9E7A] group-hover:bg-[#1A9E7A] group-hover:text-white transition shrink-0">
+                    {user.nickname ? user.nickname.charAt(0) : "W"}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
@@ -292,7 +309,6 @@ export function WorkspaceSidebar({
                 ) : (
                   <span
                     className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200"
-                    title="마이페이지에서 이메일 인증을 진행할 수 있습니다."
                   >
                     미인증
                   </span>
@@ -301,16 +317,17 @@ export function WorkspaceSidebar({
 
               <div className="flex items-center justify-between gap-1 pt-0.5 text-xs text-[#6B6B72]">
                 <button
-                  onClick={() => alert("마이페이지 및 계정 연동 설정은 준비 중입니다.")}
-                  className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg hover:bg-slate-100 transition text-[11px]"
+                  type="button"
+                  onClick={() => setIsAccountModalOpen(true)}
+                  className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg hover:bg-slate-100 transition text-[11px] font-semibold cursor-pointer"
                 >
                   <Settings className="size-3.5" />
                   <span>계정 설정</span>
                 </button>
                 <button
+                  type="button"
                   onClick={handleLogout}
-                  className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition text-[11px]"
-                  title="로그아웃"
+                  className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition text-[11px] font-semibold cursor-pointer"
                 >
                   <LogOut className="size-3.5" />
                   <span>로그아웃</span>
@@ -327,6 +344,21 @@ export function WorkspaceSidebar({
           </button>
         )}
       </div>
+
+      {/* 계정 설정 전용 모달 */}
+      <AccountSettingsModal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        user={user}
+        onLogout={handleLogout}
+        onUpdateNickname={async (newNickname) => {
+          if (user) {
+            const updated = { ...user, nickname: newNickname }
+            authService.saveSession(updated)
+            setUser(updated)
+          }
+        }}
+      />
     </aside>
   )
 
