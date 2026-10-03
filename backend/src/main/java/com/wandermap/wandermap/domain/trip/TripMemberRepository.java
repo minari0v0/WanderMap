@@ -7,4 +7,5 @@ import java.util.List;
 public interface TripMemberRepository extends JpaRepository<TripMember, Long> {
     boolean existsByTripAndUser(Trip trip, User user);
     List<TripMember> findByTrip(Trip trip);
+    List<TripMember> findByUserOrderByJoinedAtDesc(User user);
 }

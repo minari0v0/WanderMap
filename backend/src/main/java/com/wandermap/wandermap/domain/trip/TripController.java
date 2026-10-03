@@ -37,4 +37,10 @@ public class TripController {
         TripResponse response = tripService.getTripByInviteCode(inviteCode);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<java.util.List<TripResponse>> getMyTrips(@RequestParam Long userId) {
+        java.util.List<TripResponse> response = tripService.getMyTrips(userId);
+        return ResponseEntity.ok(response);
+    }
 }
