@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -71,6 +74,20 @@ public class TripService {
         Trip trip = tripRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 초대 코드입니다: " + inviteCode));
         return TripResponse.from(trip);
+    }
+
+    public List<TripResponse> getMyTrips(Long userId) {
+        if (userId == null) {
+            return java.util.Collections.emptyList();
+        }
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return java.util.Collections.emptyList();
+        }
+        return tripMemberRepository.findByUserOrderByJoinedAtDesc(user)
+                .stream()
+                .map(tm -> TripResponse.from(tm.getTrip()))
+                .toList();
     }
 
     private User getOrCreateMockUser(Long userId) {
