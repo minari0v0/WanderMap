@@ -1,7 +1,8 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { Compass, Mail, Lock, ArrowRight } from "lucide-react"
+import { ImageHoverScrubber } from "./image-hover-scrubber"
 
 export interface SignInPageProps {
   heroImageSrc?: string
@@ -35,71 +36,60 @@ export function SignInPage({
   loginMethod = null,
 }: SignInPageProps) {
   const images = heroImages && heroImages.length > 0 ? heroImages : [heroImageSrc]
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-
-  // 4.5초마다 부드러운 사진 전환
-  useEffect(() => {
-    if (images.length <= 1) return
-    const imgInterval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % images.length)
-    }, 4500)
-    return () => clearInterval(imgInterval)
-  }, [images.length])
 
   return (
     <div className="w-full max-w-5xl mx-auto min-h-[760px] lg:min-h-[820px] rounded-3xl bg-white/90 backdrop-blur-xl shadow-2xl overflow-hidden grid lg:grid-cols-[1.1fr_0.9fr] ring-1 ring-black/5">
-      {/* 좌측: 감성적인 여행 사진 크로스페이드 갤러리 & 애플 스타일 타이포그래피 */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-slate-950 text-white select-none rounded-l-3xl">
-        {/* 모든 사진들을 겹쳐놓고 active 인덱스만 부드럽게 페이드인 (절대 뚫고 나오지 않음) */}
-        {images.map((img, idx) => (
-          <div
-            key={img}
-            className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out transform ${
-              idx === currentImageIndex
-                ? "opacity-100 scale-105"
-                : "opacity-0 scale-100 pointer-events-none"
-            }`}
-            style={{ backgroundImage: `url(${img})` }}
-          />
-        ))}
-
-        {/* 감성적인 어두운 그라디언트 비네트 오버레이 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/35 to-slate-950/40 pointer-events-none" />
-
-        {/* 상단 로고 */}
-        <div className="relative z-10 flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-lg shadow-[#1A9E7A]/40">
-            <Compass className="size-4.5" />
-          </span>
-          <span className="text-xl font-black tracking-tight text-white drop-shadow-sm">WanderMap</span>
-        </div>
-
-        {/* 하단 애플 스타일 감성 타이포그래피 문구 & 인디케이터 */}
-        <div className="relative z-10 space-y-4">
-          <div className="space-y-2">
-            <h3 className="text-3xl lg:text-4xl font-extrabold tracking-tight leading-[1.25] text-white drop-shadow-md">
-              여행의 모든 순간,<br />
-              <span className="text-[#1A9E7A]">WanderMap</span>과 함께.
-            </h3>
-          </div>
-
-          {/* 사진 슬라이드 인디케이터 바 */}
-          {images.length > 1 && (
-            <div className="flex items-center gap-1.5 pt-2">
-              {images.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentImageIndex(i)}
-                  className={`h-1 rounded-full transition-all duration-300 ${
-                    i === currentImageIndex ? "w-7 bg-[#1A9E7A]" : "w-1.5 bg-white/40 hover:bg-white/70"
-                  }`}
-                  aria-label={`Photo slide ${i + 1}`}
-                />
-              ))}
+      {/* 좌측: 감성적인 여행 사진 크로스페이드 갤러리 & 호버 스크러버 */}
+      <ImageHoverScrubber
+        images={images}
+        className="hidden lg:flex flex-col justify-between p-12 bg-slate-950 text-white rounded-l-3xl"
+        overlay={
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/35 to-slate-950/40 pointer-events-none" />
+        }
+      >
+        {({ currentIndex, setCurrentIndex }) => (
+          <>
+            {/* 상단 로고 */}
+            <div className="relative z-10 flex items-center gap-2.5">
+              <span className="flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-lg shadow-[#1A9E7A]/40">
+                <Compass className="size-4.5" />
+              </span>
+              <span className="text-xl font-black tracking-tight text-white drop-shadow-sm">WanderMap</span>
             </div>
-          )}
-        </div>
-      </div>
+
+            {/* 하단 감성 타이포그래피 문구 & 인디케이터 */}
+            <div className="relative z-10 space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-3xl lg:text-4xl font-extrabold tracking-tight leading-[1.25] text-white drop-shadow-md">
+                  여행의 모든 순간,<br />
+                  <span className="text-[#1A9E7A]">WanderMap</span>과 함께.
+                </h3>
+              </div>
+
+              {/* 사진 슬라이드 인디케이터 바 (마우스 호버 & 클릭 연동) */}
+              {images.length > 1 && (
+                <div className="flex items-center gap-1.5 pt-2">
+                  {images.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setCurrentIndex(i)
+                      }}
+                      className={`h-1 rounded-full transition-all duration-300 ${
+                        i === currentIndex ? "w-7 bg-[#1A9E7A]" : "w-1.5 bg-white/40 hover:bg-white/70"
+                      }`}
+                      aria-label={`Photo slide ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </ImageHoverScrubber>
+
 
       {/* 우측: 세로로 여유롭게 확장된 실제 로그인 레이아웃 */}
       <div className="relative flex flex-col justify-between py-12 sm:py-16 px-8 sm:px-12 text-[#18181B] bg-white/75">
