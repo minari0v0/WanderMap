@@ -104,7 +104,7 @@ WanderMap은 지리 정보 확장성 및 JSONB 인덱싱 효율을 위해 Postgr
 ### 백엔드 (Backend)
 * **Java 25** & **Spring Boot 4.1.0** (Virtual Threads 기반의 신속하고 안전한 실시간 웹소켓 STOMP 구현)
 * **Spring Data JPA** & **QueryDSL** (동선 필터 및 캐시 관리)
-* **PostgreSQL 16 (Supabase)** (로컬 개발 환경 일치를 위한 docker 컨테이너 사용)
+* **Neon Serverless PostgreSQL** & **Upstash Redis** (DB & 인메모리 캐시)
 * **Spring WebSocket** (그룹 실시간 투표 반영)
 * **Gemini API** & **Naver Directions/Local API** (AI 구조화 및 경로 최적화)
 
@@ -114,41 +114,58 @@ WanderMap은 지리 정보 확장성 및 JSONB 인덱싱 효율을 위해 Postgr
 * **Axios** (인터셉터 기반 통신 인스턴스)
 * **Naver Maps JS SDK** (마커 diff 기반 최적화 렌더링)
 
+### 인프라 & 배포 (Cloud & CI/CD)
+* **Neon** (Serverless PostgreSQL)
+* **Upstash** (Serverless Redis)
+* **Vercel** (Frontend 호스팅) & **Render** (Backend 컨테이너 호스팅)
+* **GitHub Actions** (PR 자동 검증 CI & One-Click CD 배포)
+  * 자세한 아키텍처 및 파이프라인 설명은 [클라우드 이관 및 CI/CD 가이드](docs/deployment_and_cicd_guide.md)를 참고하세요.
+
 ---
 
 ## ⚡ 프로젝트 실행 방법
 
-루트 폴더에 배치된 `Makefile`을 통해 모든 서비스를 원클릭으로 구동할 수 있습니다. 
+루트 폴더에 배치된 `Makefile`을 통해 모든 서비스를 간편하게 구동할 수 있습니다. 
 
 ### 사전 준비 사항
-* 로컬 PC에 **Docker Desktop**이 설치되어 구동 중이어야 합니다.
-* 패키지 매니저로 **pnpm**이 전역 설치되어 있어야 합니다. (`npm install -g pnpm`)
+* **Java 25** (OpenJDK / Eclipse Temurin)
+* **Node.js** (v20 이상)
+* 패키지 매니저 **pnpm** 전역 설치 (`npm install -g pnpm`)
 
-### 1. 인프라 컨테이너 구동 (PostgreSQL, Redis)
-최초 1회 데이터베이스와 레디스 컨테이너를 백그라운드로 띄워줍니다.
+---
+
+### 1. 백엔드 설정 파일 준비 (`application-local.yml`)
+백엔드 로컬 실행(`make back`)을 위해 설정 파일이 필요합니다.
+* `backend/src/main/resources/application-local.yml.example` 파일을 복사하여 `application-local.yml`을 생성하고 접속 정보를 입력합니다. (이미 설정 파일을 갖고 있다면 해당 위치에 배치합니다.)
+
+---
+
+### 2. 프론트엔드 의존성 설치 (최초 1회)
+프론트엔드 최초 실행 전 패키지 의존성을 설치합니다:
 ```bash
-make db
+cd frontend && pnpm install
 ```
+> [!TIP]
+> pnpm v10+ 환경에서 빌드 스크립트 실행 차단 알림(`ERR_PNPM_IGNORED_BUILDS`)이 나타나는 경우, `pnpm approve-builds`를 실행하여 스크립트를 승인합니다.
 
-### 2. 백엔드 구동 (Spring Boot)
-로컬 DB가 기동된 후, 백엔드 서버를 부트합니다. (이때 DDL 및 스키마가 PostgreSQL에 자동 로드됩니다.)
+---
+
+### 3. 서비스 실행
+
+#### A. 백엔드 실행 (Spring Boot)
 ```bash
 make back
 ```
 
-### 3. 프론트엔드 구동 (Next.js)
-의존성 패키지가 없는 경우 최초 실행 전에 `pnpm install`을 수행한 후 실행해 주세요.
+#### B. 프론트엔드 실행 (Next.js)
 ```bash
 make front
 ```
 
-### 4. 한 번에 구동하기 (병렬 실행)
-인프라 컨테이너 실행부터 백엔드 및 프론트엔드 개발 서버 기동까지 터미널 하나로 띄우고 싶다면 아래 명령어를 입력해 주세요.
+#### C. 한 번에 구동하기 (병렬 실행)
+터미널 하나에서 백엔드와 프론트엔드를 동시에 실행합니다:
 ```bash
 make all
 ```
 
-* **서비스 중지 (DB & Redis)**:
-  ```bash
-  make db-down
-  ```
+

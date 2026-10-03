@@ -18,4 +18,4 @@ db-down:
 
 # 한 번에 실행 (병렬)
 all:
-	make -j 3 db back front
+	make -j 2 back front
