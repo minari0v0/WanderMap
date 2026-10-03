@@ -13,13 +13,16 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private static final java.util.regex.Pattern PASSWORD_PATTERN =
+            java.util.regex.Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,20}$");
+
     @Transactional
     public UserResponse signup(SignupRequest request) {
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new IllegalArgumentException("이메일을 입력해 주세요.");
         }
-        if (request.getPassword() == null || request.getPassword().length() < 4) {
-            throw new IllegalArgumentException("비밀번호는 최소 4자 이상이어야 합니다.");
+        if (request.getPassword() == null || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()) {
+            throw new IllegalArgumentException("비밀번호는 영문, 숫자, 특수문자를 포함하여 8~20자여야 합니다.");
         }
         if (request.getNickname() == null || request.getNickname().isBlank()) {
             throw new IllegalArgumentException("닉네임을 입력해 주세요.");
