@@ -69,8 +69,9 @@ export function SignInPage({
         setLocalError("이메일을 입력해 주세요.")
         return
       }
-      if (password.length < 4) {
-        setLocalError("비밀번호는 최소 4자 이상이어야 합니다.")
+      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,20}$/
+      if (!passwordRegex.test(password)) {
+        setLocalError("비밀번호는 영문, 숫자, 특수문자를 조합하여 8~20자여야 합니다.")
         return
       }
       if (password !== passwordConfirm) {
@@ -327,11 +328,20 @@ export function SignInPage({
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={currentMode === "signup" ? "비밀번호 (4자 이상)" : "비밀번호 입력"}
+                  placeholder={
+                    currentMode === "signup"
+                      ? "8~20자 (영문, 숫자, 특수문자 조합)"
+                      : "비밀번호 입력"
+                  }
                   className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
                   required
                 />
               </div>
+              {currentMode === "signup" && (
+                <p className="text-[10px] text-[#8A8A93] mt-1 pl-1">
+                  ※ 영문, 숫자, 특수문자(!@#$%^&* 등)를 포함하여 8~20자
+                </p>
+              )}
             </div>
 
             {currentMode === "signup" && (
