@@ -19,7 +19,7 @@ import {
 import { authService, type UserResponse } from "@/lib/auth-service"
 import { tripService, type TripResponse } from "@/lib/trip-service"
 import { Tooltip } from "@/components/ui/tooltip"
-import { AccountSettingsModal } from "@/components/user/account-settings-modal"
+import { showToast, showConfirm } from "@/components/ui/system-alert"
 
 export interface WorkspaceSidebarProps {
   currentTripId?: string | number
@@ -40,7 +40,14 @@ export function WorkspaceSidebar({
   const [isLoading, setIsLoading] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
+
+  function handleOpenAccountSettings() {
+    showToast("마이페이지 및 계정 연동 설정은 준비 중입니다.", "info")
+  }
+
+  function handleConfirmLogout() {
+    showConfirm("정말 로그아웃 하시겠습니까?", handleLogout)
+  }
 
   // 1. 세션 및 접힘 상태 로드
   useEffect(() => {
@@ -269,14 +276,14 @@ export function WorkspaceSidebar({
         )}
       </div>
 
-      {/* 3. 하단 고정: 사용자 프로필 & 계정 설정 모달 트리거 */}
+      {/* 3. 하단 고정: 사용자 프로필 & 계정 설정 / 로그아웃 */}
       <div className={`border-t border-[#E2E2DA]/80 bg-white transition-all duration-200 ${isCollapsed ? "p-3 flex flex-col items-center" : "p-3.5 space-y-2"}`}>
         {user ? (
           isCollapsed ? (
             <Tooltip content={`${user.nickname} (계정 설정)`} side="right">
               <button
                 type="button"
-                onClick={() => setIsAccountModalOpen(true)}
+                onClick={handleOpenAccountSettings}
                 className="size-9 rounded-full bg-[#1A9E7A]/10 border border-[#1A9E7A]/30 flex items-center justify-center text-xs font-bold text-[#1A9E7A] hover:bg-[#1A9E7A] hover:text-white transition cursor-pointer"
               >
                 {user.nickname ? user.nickname.charAt(0) : "W"}
@@ -285,8 +292,9 @@ export function WorkspaceSidebar({
           ) : (
             <div className="space-y-2 animate-in fade-in duration-150">
               <div
-                onClick={() => setIsAccountModalOpen(true)}
+                onClick={handleOpenAccountSettings}
                 className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E2E2DA] hover:border-[#1A9E7A]/60 transition cursor-pointer group"
+                title="계정 설정"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="size-7.5 rounded-full bg-[#1A9E7A]/10 border border-[#1A9E7A]/30 flex items-center justify-center text-xs font-bold text-[#1A9E7A] group-hover:bg-[#1A9E7A] group-hover:text-white transition shrink-0">
@@ -318,7 +326,7 @@ export function WorkspaceSidebar({
               <div className="flex items-center justify-between gap-1 pt-0.5 text-xs text-[#6B6B72]">
                 <button
                   type="button"
-                  onClick={() => setIsAccountModalOpen(true)}
+                  onClick={handleOpenAccountSettings}
                   className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg hover:bg-slate-100 transition text-[11px] font-semibold cursor-pointer"
                 >
                   <Settings className="size-3.5" />
@@ -326,7 +334,7 @@ export function WorkspaceSidebar({
                 </button>
                 <button
                   type="button"
-                  onClick={handleLogout}
+                  onClick={handleConfirmLogout}
                   className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition text-[11px] font-semibold cursor-pointer"
                 >
                   <LogOut className="size-3.5" />
@@ -344,21 +352,6 @@ export function WorkspaceSidebar({
           </button>
         )}
       </div>
-
-      {/* 계정 설정 전용 모달 */}
-      <AccountSettingsModal
-        isOpen={isAccountModalOpen}
-        onClose={() => setIsAccountModalOpen(false)}
-        user={user}
-        onLogout={handleLogout}
-        onUpdateNickname={async (newNickname) => {
-          if (user) {
-            const updated = { ...user, nickname: newNickname }
-            authService.saveSession(updated)
-            setUser(updated)
-          }
-        }}
-      />
     </aside>
   )
 
