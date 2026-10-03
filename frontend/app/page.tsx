@@ -99,7 +99,7 @@ export default function HomePage() {
                   <span className="flex size-7 items-center justify-center rounded-lg bg-[#EDFAF4] text-[#1A9E7A]">
                     <Plane className="size-4" />
                   </span>
-                  <h3 className="text-base font-bold text-[#18181B]">새 여행 방 만들기</h3>
+                  <h3 className="text-base font-bold text-[#18181B]">새 여행 계획 만들기</h3>
                 </div>
                 <button
                   onClick={() => setIsCreateModalOpen(false)}
@@ -169,7 +169,7 @@ export default function HomePage() {
                     disabled={isCreating}
                     className="w-full rounded-xl bg-[#1A9E7A] py-3 text-xs font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50"
                   >
-                    {isCreating ? "방 생성 중..." : "여행 방 개설하기"}
+                    {isCreating ? "계획 생성 중..." : "여행 계획 만들기"}
                   </button>
                 </div>
               </form>

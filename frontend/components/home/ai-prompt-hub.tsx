@@ -22,7 +22,7 @@ const GUIDE_PHRASES = [
   "설렌 마음 그대로 계획해볼까요?",
   "어디로 떠나나요?",
   "WanderMap과 함께 떠나는 특별한 여행",
-  "우리가 함께 만드는 완벽한 여행 지도 ✈️",
+  "우리가 함께 만드는 완벽한 여행 지도",
 ]
 
 const QUICK_DESTINATIONS = ["오사카", "도쿄", "후쿠오카", "제주도", "교토", "타이베이"]
@@ -231,12 +231,7 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
               disabled={isGenerating}
             />
 
-            <div className="flex items-center justify-between pt-2 border-t border-[#E2E2DA]/60">
-              <div className="flex items-center gap-1.5 text-[#8A8A93]">
-                <Sparkles className="size-3.5 text-amber-500 fill-amber-500" />
-                <span className="font-medium text-[11px]">AI에게 추천받고 바로 동선 짜기</span>
-              </div>
-
+            <div className="flex items-center justify-end pt-2 border-t border-[#E2E2DA]/60">
               <button
                 type="submit"
                 disabled={isGenerating || (!promptText.trim() && !destination.trim())}
@@ -249,10 +244,10 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
           </form>
         </div>
 
-        {/* 3. 추천 질문으로 바로 시작하기 (칩 형태 지양, 정갈한 텍스트 쿼트 링크 스타일) */}
-        <div className="pt-2 text-center space-y-1.5">
+        {/* 3. 추천 질문 박스 (통합 아웃라인 박스로 감싼 구조) */}
+        <div className="rounded-2xl border border-[#E2E2DA] bg-white/80 backdrop-blur-sm p-3.5 text-center space-y-1.5 shadow-2xs">
           <p className="text-[11px] font-semibold text-[#8A8A93]">추천 질문으로 바로 시작하기</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 px-2">
             {SAMPLE_PROMPTS.map((sample, idx) => (
               <button
                 key={idx}

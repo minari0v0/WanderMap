@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   Sparkles,
-  MapPin,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react"
 import { authService, type UserResponse } from "@/lib/auth-service"
 import { tripService, type TripResponse } from "@/lib/trip-service"
@@ -37,15 +38,30 @@ export function WorkspaceSidebar({
   const [trips, setTrips] = useState<TripResponse[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
-  // 1. 세션 로드
+  // 1. 세션 및 접힘 상태 로드
   useEffect(() => {
     const session = authService.getSession()
     setUser(session)
     if (session) {
       loadTrips(session.id)
     }
+
+    try {
+      const saved = localStorage.getItem("wandermap_sidebar_collapsed")
+      if (saved !== null) {
+        setIsCollapsed(saved === "true")
+      }
+    } catch {}
   }, [])
+
+  function toggleCollapse(collapsed: boolean) {
+    setIsCollapsed(collapsed)
+    try {
+      localStorage.setItem("wandermap_sidebar_collapsed", String(collapsed))
+    } catch {}
+  }
 
   // 2. 여행 목록 로드
   async function loadTrips(userId: number) {
@@ -77,42 +93,144 @@ export function WorkspaceSidebar({
     setIsMobileOpen(false)
   }
 
-  const sidebarContent = (
-    <aside className="flex h-full w-72 flex-col justify-between border-r border-[#E2E2DA] bg-white text-[#18181B] select-none shadow-xs z-10">
-      {/* 1. 상단: 브랜드 로고 & 새 여행 시작 버튼 */}
-      <div className="p-4 space-y-4 border-b border-[#E2E2DA]/80">
-        <div
+  function handleOpenCreateTrip() {
+    if (onOpenNewTripModal) {
+      onOpenNewTripModal()
+    } else {
+      router.push("/")
+    }
+    setIsMobileOpen(false)
+  }
+
+  // =========================================================================
+  // CASE 1: 접힌 상태 (Collapsed Mini Sidebar, w-[68px])
+  // =========================================================================
+  const collapsedContent = (
+    <aside className="flex h-full w-[68px] flex-col justify-between items-center py-4 bg-white text-[#18181B] select-none border-r border-[#E2E2DA] shadow-xs z-10 transition-all duration-300">
+      {/* 4-2. 사이드바 접었을 때 맨 위에는 WanderMap 로고만 표시 (클릭 시 홈페이지로 이동) */}
+      <div className="flex flex-col items-center gap-3 w-full px-2">
+        <button
+          type="button"
           onClick={handleNavigateHome}
-          className="flex items-center gap-2.5 cursor-pointer group"
+          className="flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm shadow-[#1A9E7A]/20 hover:scale-105 transition"
           title="홈으로 이동"
         >
-          <span className="flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm shadow-[#1A9E7A]/20 group-hover:scale-105 transition">
-            <Compass className="size-4.5" />
-          </span>
-          <div>
-            <span className="text-lg font-black tracking-tight text-[#18181B]">WanderMap</span>
-            <span className="block text-[10px] text-[#8A8A93] font-medium leading-none">
-              AI Travel Planner
-            </span>
+          <Compass className="size-4.5" />
+        </button>
+
+        {/* 사이드바 펼치기 토글 버튼 */}
+        <button
+          type="button"
+          onClick={() => toggleCollapse(false)}
+          className="flex size-8 items-center justify-center rounded-xl hover:bg-slate-100 text-[#6B6B72] hover:text-[#18181B] transition"
+          title="사이드바 펼치기"
+        >
+          <PanelLeftOpen className="size-4.5" />
+        </button>
+
+        {/* 구분선 */}
+        <div className="w-8 border-b border-[#E2E2DA] my-0.5" />
+
+        {/* 플러스 버튼: 누르면 새 여행 계획 생성 */}
+        <button
+          type="button"
+          onClick={handleOpenCreateTrip}
+          className="flex size-9 items-center justify-center rounded-xl bg-[#EDFAF4] text-[#1A9E7A] hover:bg-[#1A9E7A] hover:text-white transition shadow-xs group"
+          title="새 여행 계획 만들기"
+        >
+          <Plus className="size-4.5 group-hover:scale-110 transition" />
+        </button>
+
+        <div className="w-8 border-b border-[#E2E2DA]/80 my-0.5" />
+      </div>
+
+      {/* 중앙: 축약형 내 여행 목록 (아이콘 핀) */}
+      <div className="flex-1 w-full overflow-y-auto custom-scrollbar flex flex-col items-center gap-2 py-2 px-2">
+        {trips.map((trip) => {
+          const isCurrent =
+            String(currentTripId) === String(trip.id) ||
+            String(currentTripId) === String(trip.inviteCode)
+
+          return (
+            <button
+              key={trip.id}
+              type="button"
+              onClick={() => handleSelectTrip(trip)}
+              className={`flex size-9 items-center justify-center rounded-xl text-xs font-bold transition shrink-0 ${
+                isCurrent
+                  ? "bg-[#EDFAF4] text-[#1A9E7A] border border-[#1A9E7A] shadow-xs"
+                  : "hover:bg-slate-100 text-[#4A5568]"
+              }`}
+              title={`${trip.destination} - ${trip.title}`}
+            >
+              {trip.destination.charAt(0)}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* 하단: 축약형 유저 아바타 */}
+      <div className="w-full flex flex-col items-center gap-2 pt-2 border-t border-[#E2E2DA]/80 px-2">
+        {user ? (
+          <div
+            className="size-8 rounded-full bg-[#1A9E7A]/10 border border-[#1A9E7A]/30 flex items-center justify-center text-xs font-bold text-[#1A9E7A] cursor-pointer"
+            title={`${user.nickname} (${user.email})`}
+          >
+            {user.nickname.charAt(0)}
           </div>
+        ) : (
+          <button
+            onClick={() => router.push("/login")}
+            className="size-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-bold"
+            title="로그인"
+          >
+            <UserIcon className="size-4" />
+          </button>
+        )}
+      </div>
+    </aside>
+  )
+
+  // =========================================================================
+  // CASE 2: 펼쳐진 상태 (Expanded Sidebar, w-72)
+  // =========================================================================
+  const expandedContent = (
+    <aside className="flex h-full w-72 flex-col justify-between border-r border-[#E2E2DA] bg-white text-[#18181B] select-none shadow-xs z-10 transition-all duration-300">
+      {/* 1. 상단: 브랜드 로고 (AI Travel Planner 삭제됨) & 사이드바 접기 버튼 */}
+      <div className="p-4 space-y-4 border-b border-[#E2E2DA]/80">
+        <div className="flex items-center justify-between">
+          <div
+            onClick={handleNavigateHome}
+            className="flex items-center gap-2.5 cursor-pointer group"
+            title="홈으로 이동"
+          >
+            <span className="flex size-9 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm shadow-[#1A9E7A]/20 group-hover:scale-105 transition">
+              <Compass className="size-4.5" />
+            </span>
+            <span className="text-lg font-black tracking-tight text-[#18181B]">WanderMap</span>
+          </div>
+
+          {/* 사이드바 접기 버튼 */}
+          <button
+            type="button"
+            onClick={() => toggleCollapse(true)}
+            className="flex size-7 items-center justify-center rounded-lg hover:bg-slate-100 text-[#6B6B72] hover:text-[#18181B] transition"
+            title="사이드바 접기"
+          >
+            <PanelLeftClose className="size-4.5" />
+          </button>
         </div>
 
+        {/* 새 여행 계획 만들기 버튼 */}
         <button
-          onClick={() => {
-            if (onOpenNewTripModal) {
-              onOpenNewTripModal()
-            } else {
-              router.push("/")
-            }
-            setIsMobileOpen(false)
-          }}
+          onClick={handleOpenCreateTrip}
           className="w-full flex items-center justify-between gap-2 rounded-2xl bg-white border border-[#E2E2DA] hover:border-[#1A9E7A] px-3.5 py-2.5 text-xs font-bold text-[#18181B] hover:shadow-sm transition group"
         >
           <div className="flex items-center gap-2">
             <span className="flex size-6 items-center justify-center rounded-lg bg-[#EDFAF4] text-[#1A9E7A] group-hover:bg-[#1A9E7A] group-hover:text-white transition">
               <Plus className="size-3.5" />
             </span>
-            <span>새 여행 계획하기</span>
+            <span>새 여행 계획 만들기</span>
           </div>
           <Sparkles className="size-3.5 text-amber-500" />
         </button>
@@ -265,14 +383,18 @@ export function WorkspaceSidebar({
             >
               <X className="size-4" />
             </button>
-            {sidebarContent}
+            {expandedContent}
           </div>
         </div>
       )}
 
-      {/* 데스크톱 고정 사이드바 */}
-      <div className={`hidden lg:block h-screen shrink-0 ${className}`}>
-        {sidebarContent}
+      {/* 데스크톱 고정 사이드바 (접기/펼치기 반응형 너비 전환) */}
+      <div
+        className={`hidden lg:block h-screen shrink-0 transition-all duration-300 ${
+          isCollapsed ? "w-[68px]" : "w-72"
+        } ${className}`}
+      >
+        {isCollapsed ? collapsedContent : expandedContent}
       </div>
     </>
   )
