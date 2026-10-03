@@ -14,14 +14,14 @@ export function GradientBackground({
   variant = "vibrant",
   children,
 }: GradientBackgroundProps) {
-  // 1. 워크스페이스용: 복잡도와 국소 얼룩을 덜어내고, 화면 중앙 집중도를 극대화한 차분하고 세련된 Ambient Jade Sky
+  // 1. 워크스페이스용: 원본 Jade Sky의 생동감 넘치는 색감(민트, 스카이블루, 자스민)을 그대로 살리되, 넓은 방사형 확산으로 얼룩 없이 조화로운 Ambient Jade Sky
   if (variant === "workspace") {
     return (
       <div
         aria-hidden="false"
         className={`relative w-full overflow-hidden ${className}`}
         style={{
-          backgroundColor: "#F5F9F7",
+          backgroundColor: "#DCEEF2",
         }}
       >
         <div
@@ -29,10 +29,12 @@ export function GradientBackground({
           className="pointer-events-none absolute inset-0"
           style={{
             backgroundImage: `
-              radial-gradient(ellipse 90% 55% at 50% -12%, rgba(207, 233, 240, 0.5) 0%, transparent 75%),
-              radial-gradient(ellipse 65% 50% at 15% 105%, rgba(183, 217, 142, 0.20) 0%, transparent 60%),
-              radial-gradient(ellipse 65% 50% at 85% 100%, rgba(127, 191, 154, 0.18) 0%, transparent 60%),
-              linear-gradient(180deg, #F2F8F6 0%, #FAFCFB 45%, #EFF7F5 100%)
+              radial-gradient(circle at 50% 48%, rgba(242, 249, 235, 0.92) 0%, rgba(242, 249, 235, 0) 52%),
+              radial-gradient(circle at 12% 18%, rgba(127, 191, 154, 0.65) 0%, rgba(127, 191, 154, 0) 58%),
+              radial-gradient(circle at 88% 22%, rgba(207, 233, 240, 0.85) 0%, rgba(207, 233, 240, 0) 60%),
+              radial-gradient(circle at 18% 82%, rgba(183, 217, 142, 0.55) 0%, rgba(183, 217, 142, 0) 58%),
+              radial-gradient(circle at 85% 82%, rgba(127, 191, 154, 0.52) 0%, rgba(127, 191, 154, 0) 58%),
+              linear-gradient(180deg, #E2F2F5 0%, #F5FAF7 50%, #E8F4F0 100%)
             `,
           }}
         />
