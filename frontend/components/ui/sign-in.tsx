@@ -291,7 +291,7 @@ export function SignInPage({
 
             <div>
               <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">
-                이메일 (ID)
+                이메일
               </label>
               <div className="relative flex items-center">
                 <Mail className="absolute left-3.5 size-4 text-[#9E9EA4]" />
