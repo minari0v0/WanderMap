@@ -78,7 +78,7 @@ export function WorkspaceSidebar({
   }
 
   const sidebarContent = (
-    <aside className="flex h-full w-72 flex-col justify-between border-r border-[#E2E2DA] bg-[#FAFAF8] text-[#18181B] select-none">
+    <aside className="flex h-full w-72 flex-col justify-between border-r border-[#E2E2DA] bg-white text-[#18181B] select-none shadow-xs z-10">
       {/* 1. 상단: 브랜드 로고 & 새 여행 시작 버튼 */}
       <div className="p-4 space-y-4 border-b border-[#E2E2DA]/80">
         <div
@@ -146,8 +146,8 @@ export function WorkspaceSidebar({
                 onClick={() => handleSelectTrip(trip)}
                 className={`group cursor-pointer rounded-xl px-3 py-2.5 text-xs transition flex items-center justify-between gap-2 ${
                   isCurrent
-                    ? "bg-white border border-[#1A9E7A] shadow-xs text-[#1A9E7A] font-bold"
-                    : "hover:bg-white/80 border border-transparent text-[#27272A]"
+                    ? "bg-[#EDFAF4] border border-[#1A9E7A] shadow-xs text-[#1A9E7A] font-bold"
+                    : "hover:bg-slate-50 border border-transparent text-[#27272A]"
                 }`}
               >
                 <div className="min-w-0 flex-1 space-y-0.5">
@@ -176,7 +176,7 @@ export function WorkspaceSidebar({
       </div>
 
       {/* 3. 하단 고정: 사용자 프로필 & 마이페이지/설정 */}
-      <div className="border-t border-[#E2E2DA]/80 p-3 bg-white/70 space-y-2">
+      <div className="border-t border-[#E2E2DA]/80 p-3 bg-white space-y-2">
         {user ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E2E2DA]">
@@ -258,7 +258,7 @@ export function WorkspaceSidebar({
             className="fixed inset-0 bg-black/40 backdrop-blur-xs animate-in fade-in"
             onClick={() => setIsMobileOpen(false)}
           />
-          <div className="relative z-10 w-72 h-full bg-[#FAFAF8] shadow-2xl animate-in slide-in-from-left duration-200">
+          <div className="relative z-10 w-72 h-full bg-white shadow-2xl animate-in slide-in-from-left duration-200">
             <button
               onClick={() => setIsMobileOpen(false)}
               className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/80 border border-[#E2E2DA] text-[#6B6B72]"

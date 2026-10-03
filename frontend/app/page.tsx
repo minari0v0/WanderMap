@@ -75,17 +75,17 @@ export default function HomePage() {
   // =========================================================================
   if (currentUser) {
     return (
-      <div className="flex h-screen w-screen overflow-hidden bg-[#F7F7F2] font-sans">
-        {/* 공통 좌측 사이드바 */}
+      <div className="flex h-screen w-screen overflow-hidden font-sans">
+        {/* 공통 좌측 사이드바 (화이트 테마) */}
         <WorkspaceSidebar onOpenNewTripModal={() => setIsCreateModalOpen(true)} />
 
-        {/* 중앙 대화형 메인 영역 */}
-        <main className="flex-1 h-full overflow-y-auto bg-gradient-to-b from-[#FAFAF8] via-white/80 to-[#EDFAF4]/20 custom-scrollbar">
+        {/* 중앙 대화형 메인 영역 (Jade Sky 시그니처 배경 적용) */}
+        <GradientBackground className="flex-1 h-full overflow-y-auto custom-scrollbar">
           <AiPromptHub
             currentUser={currentUser}
             onOpenManualModal={() => setIsCreateModalOpen(true)}
           />
-        </main>
+        </GradientBackground>
 
         {/* 수동 새 여행 만들기 모달 */}
         {isCreateModalOpen && (

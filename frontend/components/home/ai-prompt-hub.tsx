@@ -49,13 +49,11 @@ const SAMPLE_PROMPTS = [
 export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps) {
   const router = useRouter()
 
-  // 1. 감성 가이드 문구 로테이션
-  const [guideIndex, setGuideIndex] = useState(0)
+  // 1. 감성 가이드 문구: 페이지 접속 시 1회만 랜덤 선택되고 머무는 동안은 고정 (ChatGPT / Gemini 스타일)
+  const [guidePhrase, setGuidePhrase] = useState(GUIDE_PHRASES[0])
   useEffect(() => {
-    const timer = setInterval(() => {
-      setGuideIndex((prev) => (prev + 1) % GUIDE_PHRASES.length)
-    }, 4500)
-    return () => clearInterval(timer)
+    const randomIndex = Math.floor(Math.random() * GUIDE_PHRASES.length)
+    setGuidePhrase(GUIDE_PHRASES[randomIndex])
   }, [])
 
   // 2. 입력 상태
@@ -132,21 +130,14 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
   }
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 sm:px-8 py-8 text-[#18181B]">
+    <div className="relative flex flex-col items-center justify-center min-h-full px-4 sm:px-8 py-12 text-[#18181B]">
       {/* 1. 감성 가이드 대형 타이포그래피 문구 (클로드/ChatGPT 스타일) */}
       <div className="text-center space-y-3 mb-8 max-w-2xl">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#E2E2DA] text-[11px] font-bold text-[#1A9E7A] shadow-xs">
-          <Sparkles className="size-3.5 text-amber-500" />
-          <span>Gemini Search Grounding Engine</span>
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#18181B] leading-tight min-h-[58px] sm:min-h-[64px] flex items-center justify-center transition-all duration-500">
-          <span className="key-guide-phrase animate-in fade-in duration-500">
-            {GUIDE_PHRASES[guideIndex]}
-          </span>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#18181B] leading-tight min-h-[58px] sm:min-h-[64px] flex items-center justify-center">
+          <span>{guidePhrase}</span>
         </h1>
 
-        <p className="text-xs sm:text-sm text-[#6B6B72] max-w-md mx-auto">
+        <p className="text-xs sm:text-sm text-[#4A5568] max-w-md mx-auto font-medium">
           가고 싶은 도시와 원하는 여행 분위기를 자유롭게 적어보세요. AI가 실데이터를 기반으로 최적의 동선을 즉시 설계해 드려요.
         </p>
       </div>
