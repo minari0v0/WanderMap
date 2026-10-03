@@ -3,16 +3,15 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
-  Sparkles,
-  ArrowRight,
   MapPin,
   Calendar,
-  Plane,
   Compass,
   CornerDownLeft,
+  Sparkles,
 } from "lucide-react"
-import { tripService, type TripResponse } from "@/lib/trip-service"
+import { tripService } from "@/lib/trip-service"
 import type { UserResponse } from "@/lib/auth-service"
+import { DateRangePicker } from "@/components/ui/date-range-picker"
 
 export interface AiPromptHubProps {
   currentUser: UserResponse
@@ -22,7 +21,7 @@ export interface AiPromptHubProps {
 const GUIDE_PHRASES = [
   "설렌 마음 그대로 계획해볼까요?",
   "어디로 떠나나요?",
-  "WanderMap과 힘찬 출발!",
+  "WanderMap과 함께 떠나는 특별한 여행",
   "우리가 함께 만드는 완벽한 여행 지도 ✈️",
 ]
 
@@ -30,7 +29,7 @@ const QUICK_DESTINATIONS = ["오사카", "도쿄", "후쿠오카", "제주도", 
 
 const SAMPLE_PROMPTS = [
   {
-    tag: "🍣 오사카 미식 & 야경",
+    tag: "🍣 오사카 미식 & 야경 코스",
     text: "오사카 3박 4일 일정으로 첫날은 난바 숙소 체크인 후 도톤보리 야경과 라멘 맛집 위주로 짜줘.",
     dest: "오사카",
   },
@@ -40,7 +39,7 @@ const SAMPLE_PROMPTS = [
     dest: "제주도",
   },
   {
-    tag: "⛩️ 간사이 & 사슴공원",
+    tag: "⛩️ 간사이 & 사슴공원 나들이",
     text: "간사이 여행으로 오사카 시내 둘러보고 둘째 날에는 나라 사슴공원 나들이 다녀오는 동선 부탁해.",
     dest: "오사카",
   },
@@ -130,85 +129,68 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
   }
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-full px-4 sm:px-8 py-12 text-[#18181B]">
-      {/* 1. 감성 가이드 대형 타이포그래피 문구 (클로드/ChatGPT 스타일) */}
-      <div className="text-center space-y-3 mb-8 max-w-2xl">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#18181B] leading-tight min-h-[58px] sm:min-h-[64px] flex items-center justify-center">
+    <div className="relative flex flex-col items-center justify-center h-full w-full max-w-3xl mx-auto px-4 sm:px-6 select-none">
+      {/* 1. 감성 가이드 대형 타이포그래피 문구 */}
+      <div className="text-center space-y-2 mb-6 max-w-2xl">
+        <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black tracking-tight text-[#18181B] leading-tight min-h-[50px] sm:min-h-[56px] flex items-center justify-center">
           <span>{guidePhrase}</span>
         </h1>
 
-        <p className="text-xs sm:text-sm text-[#4A5568] max-w-md mx-auto font-medium">
+        <p className="text-xs sm:text-sm text-[#52525B] max-w-md mx-auto font-medium leading-relaxed">
           가고 싶은 도시와 원하는 여행 분위기를 자유롭게 적어보세요. AI가 실데이터를 기반으로 최적의 동선을 즉시 설계해 드려요.
         </p>
       </div>
 
-      {/* 2. 대형 ChatGPT / Gemini 스타일 프롬프트 입력창 (핵심 킥!) */}
-      <div className="w-full max-w-3xl space-y-4">
-        {/* 상단 퀵 칩 (목적지 & 날짜) */}
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {/* 목적지 선택 칩 */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#E2E2DA] text-xs shadow-xs">
-            <MapPin className="size-3.5 text-[#1A9E7A]" />
+      {/* 2. 대형 ChatGPT / Gemini 스타일 프롬프트 입력창 (핵심 영역) */}
+      <div className="w-full space-y-3.5">
+        {/* 상단: 목적지 & 여행 날짜 버튼 (크기 확대 & 간결한 라벨) */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
+          {/* 목적지 입력 카드 */}
+          <div className="flex items-center gap-2 h-11 px-4 rounded-2xl bg-white/95 border border-[#E2E2DA] shadow-xs hover:border-[#1A9E7A] focus-within:border-[#1A9E7A] focus-within:ring-2 focus-within:ring-[#1A9E7A]/15 transition">
+            <MapPin className="size-4 text-[#1A9E7A] shrink-0" />
             <input
               type="text"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              placeholder="목적지 (예: 오사카, 제주)"
-              className="bg-transparent outline-none text-xs w-28 text-[#18181B] placeholder:text-[#9E9EA4]"
+              placeholder="목적지"
+              className="bg-transparent outline-none text-sm w-28 sm:w-36 text-[#18181B] placeholder:text-[#8A8A93] font-medium"
             />
           </div>
 
-          {/* 날짜 선택 토글 칩 */}
-          <button
-            type="button"
-            onClick={() => setShowDatePicker(!showDatePicker)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs shadow-xs transition ${
-              startDate
-                ? "bg-[#EDFAF4] border-[#1A9E7A] text-[#1A9E7A] font-bold"
-                : "bg-white border-[#E2E2DA] text-[#6B6B72] hover:text-[#18181B]"
-            }`}
-          >
-            <Calendar className="size-3.5" />
-            <span>
-              {startDate && endDate ? `${startDate} ~ ${endDate}` : "여행 날짜 선택 (선택 사항)"}
-            </span>
-          </button>
-        </div>
-
-        {/* 날짜 피커 인라인 팝업 */}
-        {showDatePicker && (
-          <div className="flex flex-wrap items-center justify-center gap-3 p-3 rounded-2xl bg-white border border-[#E2E2DA] shadow-md max-w-md mx-auto animate-in fade-in duration-200">
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-[#8A8A93]">출발:</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="rounded-lg border border-[#E2E2DA] px-2 py-1 text-xs"
-              />
-            </div>
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-[#8A8A93]">도착:</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="rounded-lg border border-[#E2E2DA] px-2 py-1 text-xs"
-              />
-            </div>
+          {/* 여행 날짜 선택 버튼 (클릭 시 전용 2클릭 캘린더 팝업 표시) */}
+          <div className="relative">
             <button
               type="button"
-              onClick={() => setShowDatePicker(false)}
-              className="text-xs px-2.5 py-1 rounded-lg bg-[#1A9E7A] text-white font-bold"
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className={`flex items-center gap-2 h-11 px-4 rounded-2xl border text-sm shadow-xs transition ${
+                startDate && endDate
+                  ? "bg-[#EDFAF4] border-[#1A9E7A] text-[#1A9E7A] font-bold"
+                  : "bg-white/95 border-[#E2E2DA] text-[#4A5568] hover:text-[#18181B] hover:border-[#1A9E7A] font-medium"
+              }`}
             >
-              확인
+              <Calendar className="size-4 text-[#1A9E7A] shrink-0" />
+              <span>
+                {startDate && endDate ? `${startDate} ~ ${endDate}` : "여행 날짜"}
+              </span>
             </button>
+
+            {/* 커스텀 2클릭 범위 선택 캘린더 컴포넌트 */}
+            <DateRangePicker
+              isOpen={showDatePicker}
+              onClose={() => setShowDatePicker(false)}
+              startDate={startDate}
+              endDate={endDate}
+              onSelectRange={(start, end) => {
+                setStartDate(start)
+                setEndDate(end)
+              }}
+            />
           </div>
-        )}
+        </div>
 
         {/* 메인 프롬프트 텍스트 박스 */}
         <div className="relative rounded-3xl border border-[#E2E2DA] bg-white/95 backdrop-blur-xl shadow-xl hover:border-[#1A9E7A]/60 focus-within:border-[#1A9E7A] focus-within:ring-4 focus-within:ring-[#1A9E7A]/10 transition duration-200">
-          <form onSubmit={handleSendPrompt} className="p-4 sm:p-5 flex flex-col justify-between min-h-[140px]">
+          <form onSubmit={handleSendPrompt} className="p-4 sm:p-5 flex flex-col justify-between min-h-[135px]">
             <textarea
               value={promptText}
               onChange={(e) => setPromptText(e.target.value)}
@@ -219,7 +201,7 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
                 }
               }}
               placeholder="무엇이든 물어보세요! 예: '3박 4일 오사카 맛집이랑 감성 카페 위주로 짜줘. 첫날은 공항 도착 후 난바 숙소 체크인하고 도톤보리 구경하고 싶어'"
-              className="w-full bg-transparent resize-none outline-none text-sm text-[#18181B] placeholder:text-[#9E9EA4] leading-relaxed min-h-[70px]"
+              className="w-full bg-transparent resize-none outline-none text-sm text-[#18181B] placeholder:text-[#9E9EA4] leading-relaxed min-h-[65px]"
               disabled={isGenerating}
             />
 
@@ -255,18 +237,20 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
           </form>
         </div>
 
-        {/* 3. 추천 프롬프트 칩들 */}
-        <div className="space-y-1.5 pt-1">
-          <p className="text-[11px] text-[#8A8A93] text-center font-medium">추천 질문으로 바로 시작하기</p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
+        {/* 3. 추천 질문으로 바로 시작하기 (칩 형태 지양, 정갈한 텍스트 쿼트 링크 스타일) */}
+        <div className="pt-2 text-center space-y-1.5">
+          <p className="text-[11px] font-semibold text-[#8A8A93]">추천 질문으로 바로 시작하기</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-2">
             {SAMPLE_PROMPTS.map((sample, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSelectSample(sample)}
-                className="rounded-full border border-[#E2E2DA] bg-white/80 hover:bg-white hover:border-[#1A9E7A] px-3.5 py-1.5 text-xs text-[#27272A] hover:text-[#1A9E7A] shadow-xs transition duration-150"
+                className="group inline-flex items-center gap-1 text-xs text-[#52525B] hover:text-[#1A9E7A] font-medium transition cursor-pointer"
               >
-                {sample.tag}
+                <span className="text-[#A0AEC0] group-hover:text-[#1A9E7A] transition text-sm leading-none">“</span>
+                <span className="group-hover:underline underline-offset-4 decoration-[#1A9E7A]/40">{sample.tag}</span>
+                <span className="text-[#A0AEC0] group-hover:text-[#1A9E7A] transition text-sm leading-none">”</span>
               </button>
             ))}
           </div>
@@ -290,16 +274,12 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
             <div className="space-y-1.5">
               <h3 className="text-base font-bold text-[#18181B]">
                 {loadingStep === 1
-                  ? "Google 검색으로 최신 장소 탐색 중..."
-                  : "일자별 최적 동선을 연결하고 있습니다..."}
+                  ? "AI가 실시간 검색 그라운딩을 진행 중입니다..."
+                  : "최적의 일자별 동선 지도를 설계하고 있어요 ✨"}
               </h3>
-              <p className="text-xs text-[#6B6B72] leading-relaxed">
-                폐업 여부와 실좌표를 확인하여 환각 없는 정확한 지도를 완성하고 있습니다.
+              <p className="text-xs text-[#6B6B72]">
+                목적지의 위치, 운영 시간, 이동 동선을 고려하여 최적의 추천을 준비합니다.
               </p>
-            </div>
-
-            <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#1A9E7A] to-emerald-400 animate-pulse w-3/4 mx-auto rounded-full" />
             </div>
           </div>
         </div>

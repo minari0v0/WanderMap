@@ -79,8 +79,11 @@ export default function HomePage() {
         {/* 공통 좌측 사이드바 (화이트 테마) */}
         <WorkspaceSidebar onOpenNewTripModal={() => setIsCreateModalOpen(true)} />
 
-        {/* 중앙 대화형 메인 영역 (Jade Sky 시그니처 배경 적용) */}
-        <GradientBackground className="flex-1 h-full overflow-y-auto custom-scrollbar">
+        {/* 중앙 대화형 메인 영역 (차분하고 우아한 Ambient Jade Sky 워크스페이스 배경) */}
+        <GradientBackground
+          variant="workspace"
+          className="flex-1 h-full overflow-hidden flex flex-col justify-center items-center"
+        >
           <AiPromptHub
             currentUser={currentUser}
             onOpenManualModal={() => setIsCreateModalOpen(true)}
