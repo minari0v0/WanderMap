@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Noto_Sans_KR } from 'next/font/google'
+import { SystemAlertProvider } from '@/components/ui/system-alert'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -46,7 +47,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${notoSansKr.variable} bg-background`}
     >
       <body className="font-sans antialiased">
-        {children}
+        <SystemAlertProvider>
+          {children}
+        </SystemAlertProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
