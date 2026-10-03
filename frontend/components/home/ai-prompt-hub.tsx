@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import {
   MapPin,
@@ -15,7 +15,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker"
 
 export interface AiPromptHubProps {
   currentUser: UserResponse
-  onOpenManualModal?: () => void
+  onOpenManualModal?: (preset?: { destination?: string; startDate?: string; endDate?: string }) => void
 }
 
 const GUIDE_PHRASES = [
@@ -84,6 +84,7 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // 3. 로딩 상태
   const [isGenerating, setIsGenerating] = useState(false)
@@ -117,14 +118,14 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
 
       const tripTitle = `${targetDest} ${promptText.length > 20 ? promptText.slice(0, 18) + "..." : "힐링 여행"} ✈️`
 
-      const finalStartDate = startDate || ""
-      const finalEndDate = endDate || ""
+      const finalStartDate = startDate || "2026-10-24"
+      const finalEndDate = endDate || "2026-10-27"
 
       const newTrip = await tripService.createTrip({
         title: tripTitle,
         destination: targetDest,
-        startDate: finalStartDate || "2026-10-24",
-        endDate: finalEndDate || "2026-10-27",
+        startDate: finalStartDate,
+        endDate: finalEndDate,
         userId: currentUser.id,
       })
 
@@ -143,6 +144,14 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
   function handleSelectSample(sample: (typeof SAMPLE_PROMPTS)[0]) {
     setPromptText(sample.text)
     setDestination(sample.dest)
+    if (textareaRef.current) {
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto"
+          textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`
+        }
+      }, 50)
+    }
   }
 
   return (
@@ -204,8 +213,8 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
           {onOpenManualModal && (
             <button
               type="button"
-              onClick={onOpenManualModal}
-              className="flex items-center gap-1.5 h-11 px-4 rounded-2xl bg-white/95 hover:bg-white border border-[#E2E2DA] hover:border-[#1A9E7A] text-[#18181B] hover:text-[#1A9E7A] font-bold text-sm shadow-xs transition group"
+              onClick={() => onOpenManualModal({ destination, startDate, endDate })}
+              className="flex items-center gap-1.5 h-11 px-4 rounded-2xl bg-white/95 hover:bg-white border border-[#E2E2DA] hover:border-[#1A9E7A] text-[#18181B] hover:text-[#1A9E7A] font-bold text-sm shadow-xs transition group cursor-pointer"
               title="AI 추천 없이 직접 장소를 추가하며 계획하기"
             >
               <Plus className="size-4 text-[#1A9E7A] group-hover:scale-110 transition" />
@@ -214,33 +223,38 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
           )}
         </div>
 
-        {/* 메인 프롬프트 텍스트 박스 */}
+        {/* 메인 프롬프트 텍스트 박스: 기본 1줄 인라인 전송 버튼 + 글이 길어지면 자동 확장 */}
         <div className="relative rounded-3xl border border-[#E2E2DA] bg-white/95 backdrop-blur-xl shadow-xl hover:border-[#1A9E7A]/60 focus-within:border-[#1A9E7A] focus-within:ring-4 focus-within:ring-[#1A9E7A]/10 transition duration-200">
-          <form onSubmit={handleSendPrompt} className="p-4 sm:p-5 flex flex-col justify-between min-h-[125px]">
+          <form onSubmit={handleSendPrompt} className="p-2 sm:p-2.5 flex items-end gap-2">
             <textarea
+              ref={textareaRef}
               value={promptText}
-              onChange={(e) => setPromptText(e.target.value)}
+              onChange={(e) => {
+                setPromptText(e.target.value)
+                e.target.style.height = "auto"
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault()
                   handleSendPrompt()
                 }
               }}
+              rows={1}
               placeholder="WanderMap과 시작하기..."
-              className="w-full bg-transparent resize-none outline-none text-sm text-[#18181B] placeholder:text-[#9E9EA4] leading-relaxed min-h-[55px]"
+              className="flex-1 bg-transparent resize-none outline-none text-sm text-[#18181B] placeholder:text-[#9E9EA4] leading-relaxed py-2 px-3 max-h-40 custom-scrollbar"
+              style={{ minHeight: "38px" }}
               disabled={isGenerating}
             />
 
-            <div className="flex items-center justify-end pt-2 border-t border-[#E2E2DA]/60">
-              <button
-                type="submit"
-                disabled={isGenerating || (!promptText.trim() && !destination.trim())}
-                className="flex size-9 items-center justify-center rounded-2xl bg-[#1A9E7A] text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/25 disabled:opacity-30 disabled:shadow-none"
-                title="동선 생성 시작 (Enter)"
-              >
-                <CornerDownLeft className="size-4" />
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isGenerating || (!promptText.trim() && !destination.trim())}
+              className="shrink-0 flex size-9 items-center justify-center rounded-2xl bg-[#1A9E7A] text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/25 disabled:opacity-30 disabled:shadow-none mb-0.5"
+              title="동선 생성 시작 (Enter)"
+            >
+              <CornerDownLeft className="size-4" />
+            </button>
           </form>
         </div>
 

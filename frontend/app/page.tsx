@@ -34,6 +34,21 @@ export default function HomePage() {
   const [endDate, setEndDate] = useState("2026-10-27")
   const [isCreating, setIsCreating] = useState(false)
 
+  // 수동 생성 모달 열기 (목적지 및 날짜 프리셋 자동 연동)
+  function handleOpenCreateModal(preset?: { destination?: string; startDate?: string; endDate?: string }) {
+    if (preset) {
+      if (preset.destination) {
+        setDestination(preset.destination)
+        if (!title) {
+          setTitle(`${preset.destination} 여행 계획 ✈️`)
+        }
+      }
+      if (preset.startDate) setStartDate(preset.startDate)
+      if (preset.endDate) setEndDate(preset.endDate)
+    }
+    setIsCreateModalOpen(true)
+  }
+
   // 1. 세션 확인
   useEffect(() => {
     const session = authService.getSession()
@@ -60,7 +75,7 @@ export default function HomePage() {
       setDestination("")
       router.push(`/trips/${newTrip.inviteCode || newTrip.id}`)
     } catch (err: any) {
-      alert(err.response?.data?.error || "여행 방 생성에 실패했습니다.")
+      alert(err.response?.data?.error || "여행 계획 생성에 실패했습니다.")
     } finally {
       setIsCreating(false)
     }
@@ -77,7 +92,7 @@ export default function HomePage() {
     return (
       <div className="flex h-screen w-screen overflow-hidden font-sans">
         {/* 공통 좌측 사이드바 (화이트 테마) */}
-        <WorkspaceSidebar onOpenNewTripModal={() => setIsCreateModalOpen(true)} />
+        <WorkspaceSidebar onOpenNewTripModal={() => handleOpenCreateModal()} />
 
         {/* 중앙 대화형 메인 영역 (차분하고 우아한 Ambient Jade Sky 워크스페이스 배경) */}
         <GradientBackground
@@ -86,7 +101,7 @@ export default function HomePage() {
         >
           <AiPromptHub
             currentUser={currentUser}
-            onOpenManualModal={() => setIsCreateModalOpen(true)}
+            onOpenManualModal={handleOpenCreateModal}
           />
         </GradientBackground>
 
