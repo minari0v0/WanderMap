@@ -45,27 +45,30 @@ const SAMPLE_PROMPTS = [
   },
 ]
 
-// 날짜 범위 포맷 헬퍼: 2026-10-01 ~ 2026-10-15 -> 10월 1일 ~ 10월 15일 (14박 15일)
-function formatDateRangeLabel(start: string, end: string): string {
-  if (!start && !end) return "여행 날짜 선택"
+// 날짜 범위 및 여행 기간 분리 헬퍼
+function parseDateRangeInfo(start: string, end: string) {
+  if (!start && !end) return null
   if (start && !end) {
     const [, m, d] = start.split("-")
-    return `${parseInt(m)}월 ${parseInt(d)}일 출발 ~`
+    return {
+      text: `${parseInt(m)}월 ${parseInt(d)}일 출발 ~`,
+      duration: null,
+    }
   }
-  if (start && end) {
-    const sDate = new Date(start)
-    const eDate = new Date(end)
-    const diffTime = Math.abs(eDate.getTime() - sDate.getTime())
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
-    const nights = diffDays
-    const days = diffDays + 1
+  const sDate = new Date(start)
+  const eDate = new Date(end)
+  const diffTime = Math.abs(eDate.getTime() - sDate.getTime())
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+  const nights = diffDays
+  const days = diffDays + 1
 
-    const [, sm, sd] = start.split("-")
-    const [, em, ed] = end.split("-")
+  const [, sm, sd] = start.split("-")
+  const [, em, ed] = end.split("-")
 
-    return `${parseInt(sm)}월 ${parseInt(sd)}일 ~ ${parseInt(em)}월 ${parseInt(ed)}일 (${nights}박 ${days}일)`
+  return {
+    text: `${parseInt(sm)}월 ${parseInt(sd)}일 ~ ${parseInt(em)}월 ${parseInt(ed)}일`,
+    duration: `${nights}박 ${days}일`,
   }
-  return "여행 날짜 선택"
 }
 
 export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps) {
@@ -179,22 +182,38 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
             />
           </div>
 
-          {/* 여행 날짜 선택 버튼 (넓은 너비와 직관적인 포맷) */}
+          {/* 여행 날짜 선택 버튼 (넓은 너비와 직관적인 포맷 + o박o일 강조) */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className={`flex items-center justify-between gap-2 h-11 px-4 min-w-[210px] sm:min-w-[260px] rounded-2xl border text-sm shadow-xs transition ${
-                startDate && endDate
-                  ? "bg-[#EDFAF4] border-[#1A9E7A] text-[#1A9E7A] font-bold"
-                  : "bg-white/95 border-[#E2E2DA] text-[#4A5568] hover:text-[#18181B] hover:border-[#1A9E7A] font-medium"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Calendar className="size-4 text-[#1A9E7A] shrink-0" />
-                <span>{formatDateRangeLabel(startDate, endDate)}</span>
-              </div>
-            </button>
+            {(() => {
+              const rangeInfo = parseDateRangeInfo(startDate, endDate)
+              return (
+                <button
+                  type="button"
+                  onClick={() => setShowDatePicker(!showDatePicker)}
+                  className={`flex items-center justify-between gap-2 h-11 px-4 min-w-[210px] sm:min-w-[260px] rounded-2xl border text-sm shadow-xs transition cursor-pointer ${
+                    startDate && endDate
+                      ? "bg-white/95 border-[#1A9E7A] text-[#18181B] ring-2 ring-[#1A9E7A]/10 font-medium"
+                      : "bg-white/95 border-[#E2E2DA] text-[#4A5568] hover:text-[#18181B] hover:border-[#1A9E7A] font-medium"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Calendar className="size-4 text-[#1A9E7A] shrink-0" />
+                    {rangeInfo ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-xs sm:text-sm text-[#18181B]">{rangeInfo.text}</span>
+                        {rangeInfo.duration && (
+                          <span className="px-2 py-0.5 rounded-full bg-[#1A9E7A] text-white text-[11px] font-black tracking-tight shadow-xs animate-in zoom-in-95 duration-150 shrink-0">
+                            {rangeInfo.duration}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs sm:text-sm text-[#4A5568]">여행 날짜 선택</span>
+                    )}
+                  </div>
+                </button>
+              )
+            })()}
 
             {/* 커스텀 2클릭 범위 선택 캘린더 컴포넌트 */}
             <DateRangePicker

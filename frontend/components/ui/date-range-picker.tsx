@@ -155,11 +155,26 @@ export function DateRangePicker({
 
       {/* 안내 문구 */}
       <div className="py-2 text-center text-[11px] font-semibold text-[#8A8A93]">
-        {!tempStart
-          ? "출발일을 선택해 주세요"
-          : !tempEnd
-          ? "도착일을 선택해 주세요 (역순 자동 정렬)"
-          : `${tempStart} ~ ${tempEnd}`}
+        {!tempStart ? (
+          "출발일을 선택해 주세요"
+        ) : !tempEnd ? (
+          "도착일을 선택해 주세요 (역순 자동 정렬)"
+        ) : (
+          (() => {
+            const s = new Date(tempStart)
+            const e = new Date(tempEnd)
+            const nights = Math.max(0, Math.round(Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)))
+            const days = nights + 1
+            return (
+              <span className="inline-flex items-center gap-1.5 text-[#18181B] font-bold">
+                <span>{tempStart} ~ {tempEnd}</span>
+                <span className="px-1.5 py-0.2 rounded bg-[#1A9E7A] text-white text-[10px] font-black">
+                  {nights}박 {days}일
+                </span>
+              </span>
+            )
+          })()
+        )}
       </div>
 
       {/* 요일 헤더 */}
