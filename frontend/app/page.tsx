@@ -9,7 +9,6 @@ import {
   ThumbsDown,
   Plane,
   ArrowRight,
-  Plus,
   Calendar,
   X,
 } from "lucide-react"
@@ -20,6 +19,7 @@ import { authService, type UserResponse } from "@/lib/auth-service"
 import { tripService } from "@/lib/trip-service"
 import { WorkspaceSidebar } from "@/components/layout/workspace-sidebar"
 import { AiPromptHub } from "@/components/home/ai-prompt-hub"
+import { DateRangePicker, parseDateRangeInfo } from "@/components/ui/date-range-picker"
 
 export default function HomePage() {
   const router = useRouter()
@@ -32,6 +32,7 @@ export default function HomePage() {
   const [destination, setDestination] = useState("")
   const [startDate, setStartDate] = useState("2026-10-24")
   const [endDate, setEndDate] = useState("2026-10-27")
+  const [showModalDatePicker, setShowModalDatePicker] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
 
   // 수동 생성 모달 열기 (목적지 및 날짜 프리셋 자동 연동)
@@ -46,6 +47,7 @@ export default function HomePage() {
       if (preset.startDate) setStartDate(preset.startDate)
       if (preset.endDate) setEndDate(preset.endDate)
     }
+    setShowModalDatePicker(false)
     setIsCreateModalOpen(true)
   }
 
@@ -55,6 +57,19 @@ export default function HomePage() {
     setCurrentUser(session)
     setIsAuthChecked(true)
   }, [])
+
+  // ESC 키로 새 여행 모달 닫기
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && isCreateModalOpen && !showModalDatePicker) {
+        setIsCreateModalOpen(false)
+      }
+    }
+    if (isCreateModalOpen) {
+      window.addEventListener("keydown", handleKeyDown)
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [isCreateModalOpen, showModalDatePicker])
 
   // 2. 수동 새 여행 만들기
   async function handleCreateTrip(e: React.FormEvent) {
@@ -85,48 +100,62 @@ export default function HomePage() {
     return <div className="min-h-screen bg-[#F7F7F2]" />
   }
 
+  const modalRangeInfo = parseDateRangeInfo(startDate, endDate)
+
   // =========================================================================
-  // CASE A: 로그인 유저 화면 (ChatGPT / Gemini 스타일 대화형 기획 허브)
+  // CASE A: 로그인 유저 화면 (플로팅 트래블 보관함 + 올인원 트래블 컴포저 허브)
   // =========================================================================
   if (currentUser) {
     return (
-      <div className="flex h-screen w-screen overflow-hidden font-sans">
-        {/* 공통 좌측 사이드바 (화이트 테마) */}
-        <WorkspaceSidebar onOpenNewTripModal={() => handleOpenCreateModal()} />
-
-        {/* 중앙 대화형 메인 영역 (차분하고 우아한 Ambient Jade Sky 워크스페이스 배경) */}
-        <GradientBackground
-          variant="workspace"
-          className="flex-1 h-full overflow-hidden flex flex-col justify-center items-center"
-        >
-          <AiPromptHub
-            currentUser={currentUser}
-            onOpenManualModal={handleOpenCreateModal}
+      <GradientBackground
+        variant="workspace"
+        className="flex h-screen w-screen overflow-hidden font-sans"
+      >
+        <div className="flex h-screen w-screen overflow-hidden">
+          {/* 좌측 플로팅 트래블 보관함 사이드바 */}
+          <WorkspaceSidebar
+            variant="floating"
+            onOpenNewTripModal={() => handleOpenCreateModal()}
           />
-        </GradientBackground>
 
-        {/* 수동 새 여행 만들기 모달 */}
+          {/* 중앙 올인원 트래블 컴포저 영역 */}
+          <main className="flex-1 h-full overflow-y-auto flex flex-col justify-center items-center">
+            <AiPromptHub
+              currentUser={currentUser}
+              onOpenManualModal={handleOpenCreateModal}
+            />
+          </main>
+        </div>
+
+        {/* 새 여행 계획 직접 만들기 모달 (공통 DateRangePicker 재사용 & 바깥 클릭 닫기 지원) */}
         {isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="relative w-full max-w-md rounded-3xl border border-[#E2E2DA] bg-white p-6 sm:p-8 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between border-b border-[#E2E2DA] pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="flex size-7 items-center justify-center rounded-lg bg-[#EDFAF4] text-[#1A9E7A]">
-                    <Plane className="size-4" />
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+            onClick={() => setIsCreateModalOpen(false)}
+          >
+            <div
+              className="relative w-full max-w-lg rounded-3xl border border-[#E2E2DA] bg-white p-6 sm:p-8 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-[#E2E2DA] pb-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-[#EDFAF4] text-[#1A9E7A]">
+                    <Plane className="size-5" />
                   </span>
-                  <h3 className="text-base font-bold text-[#18181B]">새 여행 계획 만들기</h3>
+                  <h3 className="text-lg font-extrabold text-[#18181B]">상세 일정 생성하기</h3>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="flex size-8 items-center justify-center rounded-full hover:bg-slate-100 transition text-[#6B6B72]"
+                  className="flex size-9 items-center justify-center rounded-full hover:bg-slate-100 transition text-[#6B6B72] cursor-pointer"
                 >
-                  <X className="size-4" />
+                  <X className="size-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleCreateTrip} className="space-y-4 pt-1">
+              <form onSubmit={handleCreateTrip} className="space-y-4">
                 <div>
-                  <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">
+                  <label className="text-sm font-bold text-[#27272A] block mb-1.5">
                     여행 제목
                   </label>
                   <input
@@ -134,13 +163,14 @@ export default function HomePage() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="예: 제주도 동쪽 힐링 코스 🌴"
-                    className="w-full rounded-xl border border-[#E2E2DA] bg-slate-50/70 px-3.5 py-2.5 text-xs outline-none focus:border-[#1A9E7A] transition"
+                    className="w-full h-12 rounded-2xl border border-[#E2E2DA] bg-[#F7F7F2] focus:bg-white px-4 text-base font-medium outline-none focus:border-[#1A9E7A] transition"
                     required
+                    autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">
+                  <label className="text-sm font-bold text-[#27272A] block mb-1.5">
                     목적지 (도시 / 지역)
                   </label>
                   <input
@@ -148,50 +178,66 @@ export default function HomePage() {
                     value={destination}
                     onChange={(e) => setDestination(e.target.value)}
                     placeholder="예: 오사카, 제주특별자치도, 도쿄"
-                    className="w-full rounded-xl border border-[#E2E2DA] bg-slate-50/70 px-3.5 py-2.5 text-xs outline-none focus:border-[#1A9E7A] transition"
+                    className="w-full h-12 rounded-2xl border border-[#E2E2DA] bg-[#F7F7F2] focus:bg-white px-4 text-base font-medium outline-none focus:border-[#1A9E7A] transition"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">
-                      시작일
-                    </label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full rounded-xl border border-[#E2E2DA] bg-slate-50/70 px-3 py-2 text-xs outline-none focus:border-[#1A9E7A] transition"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-[#6B6B72] uppercase block mb-1">
-                      종료일
-                    </label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full rounded-xl border border-[#E2E2DA] bg-slate-50/70 px-3 py-2 text-xs outline-none focus:border-[#1A9E7A] transition"
-                    />
-                  </div>
+                {/* 재사용 DateRangePicker 적용 */}
+                <div className="relative">
+                  <label className="text-sm font-bold text-[#27272A] block mb-1.5">
+                    여행 일정
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowModalDatePicker(!showModalDatePicker)}
+                    className={`w-full flex items-center justify-between h-12 px-4 rounded-2xl border text-base transition cursor-pointer ${
+                      startDate && endDate
+                        ? "bg-[#EDFAF4]/60 border-[#1A9E7A] text-[#18181B] font-bold"
+                        : "bg-[#F7F7F2] border-[#E2E2DA] text-[#52525B] hover:border-[#1A9E7A]/60 font-medium"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="size-4.5 text-[#1A9E7A]" />
+                      {modalRangeInfo ? (
+                        <span>{modalRangeInfo.text}</span>
+                      ) : (
+                        <span className="text-[#8A8A93]">출발일 ~ 도착일 선택</span>
+                      )}
+                    </div>
+                    {modalRangeInfo?.duration && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#1A9E7A] text-white text-xs font-extrabold">
+                        {modalRangeInfo.duration}
+                      </span>
+                    )}
+                  </button>
+
+                  <DateRangePicker
+                    isOpen={showModalDatePicker}
+                    onClose={() => setShowModalDatePicker(false)}
+                    startDate={startDate}
+                    endDate={endDate}
+                    onSelectRange={(start, end) => {
+                      setStartDate(start)
+                      setEndDate(end)
+                    }}
+                  />
                 </div>
 
                 <div className="pt-2">
                   <button
                     type="submit"
-                    disabled={isCreating}
-                    className="w-full rounded-xl bg-[#1A9E7A] py-3 text-xs font-bold text-white hover:bg-[#158063] transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50"
+                    disabled={isCreating || !startDate || !endDate}
+                    className="w-full h-13 rounded-2xl bg-[#1A9E7A] hover:bg-[#158063] text-base font-extrabold text-white transition shadow-md shadow-[#1A9E7A]/20 disabled:opacity-50 cursor-pointer"
                   >
-                    {isCreating ? "계획 생성 중..." : "여행 계획 만들기"}
+                    {isCreating ? "생성 중..." : "여행 계획 만들기"}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
-      </div>
+      </GradientBackground>
     )
   }
 

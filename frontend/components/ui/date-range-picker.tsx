@@ -9,9 +9,37 @@ export interface DateRangePickerProps {
   onSelectRange: (start: string, end: string) => void
   onClose: () => void
   isOpen: boolean
+  align?: "left" | "center" | "right"
+  className?: string
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
+
+// 어디서든 재사용 가능한 날짜 범위 포맷 헬퍼
+export function parseDateRangeInfo(start: string, end: string) {
+  if (!start && !end) return null
+  if (start && !end) {
+    const [, m, d] = start.split("-")
+    return {
+      text: `${parseInt(m)}월 ${parseInt(d)}일 출발 ~`,
+      duration: null,
+    }
+  }
+  const sDate = new Date(start)
+  const eDate = new Date(end)
+  const diffTime = Math.abs(eDate.getTime() - sDate.getTime())
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+  const nights = diffDays
+  const days = diffDays + 1
+
+  const [, sm, sd] = start.split("-")
+  const [, em, ed] = end.split("-")
+
+  return {
+    text: `${parseInt(sm)}월 ${parseInt(sd)}일 ~ ${parseInt(em)}월 ${parseInt(ed)}일`,
+    duration: nights === 0 ? "당일치기" : `${nights}박 ${days}일`,
+  }
+}
 
 export function DateRangePicker({
   startDate,
@@ -19,35 +47,41 @@ export function DateRangePicker({
   onSelectRange,
   onClose,
   isOpen,
+  align = "left",
+  className = "",
 }: DateRangePickerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // 달력 기준 월 (기본값: startDate가 있으면 해당 월, 없으면 오늘)
   const initialDate = startDate ? new Date(startDate) : new Date()
   const [currentYear, setCurrentYear] = useState(initialDate.getFullYear())
-  const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth()) // 0 ~ 11
+  const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth())
 
-  // 선택 중인 임시 상태
   const [tempStart, setTempStart] = useState<string | null>(startDate || null)
   const [tempEnd, setTempEnd] = useState<string | null>(endDate || null)
   const [hoverDate, setHoverDate] = useState<string | null>(null)
 
-  // 외부 클릭 시 닫기
+  // 바깥 클릭 및 ESC 키로 닫기
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         onClose()
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onClose()
+      }
+    }
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside)
+      window.addEventListener("keydown", handleKeyDown)
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
+      window.removeEventListener("keydown", handleKeyDown)
     }
   }, [isOpen, onClose])
 
-  // 동기화
   useEffect(() => {
     setTempStart(startDate || null)
     setTempEnd(endDate || null)
@@ -55,7 +89,6 @@ export function DateRangePicker({
 
   if (!isOpen) return null
 
-  // 월 이동
   function handlePrevMonth() {
     if (currentMonth === 0) {
       setCurrentMonth(11)
@@ -74,7 +107,6 @@ export function DateRangePicker({
     }
   }
 
-  // 날짜 계산
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay()
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
 
@@ -84,19 +116,15 @@ export function DateRangePicker({
     return `${year}-${m}-${d}`
   }
 
-  // 날짜 클릭 처리 (2번 클릭으로 시작일과 종료일 지정, 역순 자동 보정)
   function handleDateClick(dateStr: string) {
     if (!tempStart || (tempStart && tempEnd)) {
-      // 1번째 클릭: 새 시작일 지정
       setTempStart(dateStr)
       setTempEnd(null)
     } else {
-      // 2번째 클릭: 종료일 지정 및 역순 자동 정렬
       let start = tempStart
       let end = dateStr
 
       if (new Date(end) < new Date(start)) {
-        // 역순 선택 시 자동 반전
         const swap = start
         start = end
         end = swap
@@ -105,7 +133,6 @@ export function DateRangePicker({
       setTempStart(start)
       setTempEnd(end)
 
-      // 부모에게 반영 후 부드럽게 자동 닫기 (220ms 피드백 딜레이)
       onSelectRange(start, end)
       setTimeout(() => {
         onClose()
@@ -119,16 +146,23 @@ export function DateRangePicker({
     onSelectRange("", "")
   }
 
+  const alignClass =
+    align === "right"
+      ? "right-0"
+      : align === "center"
+        ? "left-1/2 -translate-x-1/2"
+        : "left-0"
+
   return (
     <div
       ref={containerRef}
-      className="absolute top-full mt-2.5 z-50 w-76 sm:w-80 rounded-3xl border border-[#E2E2DA] bg-white/98 backdrop-blur-xl p-4 sm:p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 select-none text-[#18181B]"
+      className={`absolute top-full mt-2.5 ${alignClass} z-[60] w-80 sm:w-[340px] rounded-3xl border border-[#E2E2DA] bg-white p-5 shadow-[0_24px_60px_rgb(0,0,0,0.14)] animate-in fade-in zoom-in-95 duration-150 select-none text-[#18181B] ${className}`}
     >
       {/* 헤더: 년/월 및 이전/다음 버튼 */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#E2E2DA]/80">
-        <div className="flex items-center gap-1.5">
-          <CalendarIcon className="size-4 text-[#1A9E7A]" />
-          <span className="text-sm font-bold tracking-tight">
+      <div className="flex items-center justify-between pb-3.5 border-b border-[#E2E2DA]/80">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="size-4.5 text-[#1A9E7A]" />
+          <span className="text-base font-extrabold tracking-tight">
             {currentYear}년 {currentMonth + 1}월
           </span>
         </div>
@@ -137,39 +171,44 @@ export function DateRangePicker({
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="flex size-7 items-center justify-center rounded-lg hover:bg-slate-100 text-[#6B6B72] hover:text-[#18181B] transition"
+            className="flex size-8 items-center justify-center rounded-xl hover:bg-slate-100 text-[#6B6B72] hover:text-[#18181B] transition cursor-pointer"
             title="이전 달"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-4.5" />
           </button>
           <button
             type="button"
             onClick={handleNextMonth}
-            className="flex size-7 items-center justify-center rounded-lg hover:bg-slate-100 text-[#6B6B72] hover:text-[#18181B] transition"
+            className="flex size-8 items-center justify-center rounded-xl hover:bg-slate-100 text-[#6B6B72] hover:text-[#18181B] transition cursor-pointer"
             title="다음 달"
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="size-4.5" />
           </button>
         </div>
       </div>
 
-      {/* 안내 문구 */}
-      <div className="py-2 text-center text-[11px] font-semibold text-[#8A8A93]">
+      {/* 선택 상태 안내 */}
+      <div className="py-2.5 text-center text-xs font-bold text-[#6B6B72]">
         {!tempStart ? (
           "출발일을 선택해 주세요"
         ) : !tempEnd ? (
-          "도착일을 선택해 주세요 (역순 자동 정렬)"
+          <span className="text-[#1A9E7A]">도착일을 선택해 주세요</span>
         ) : (
           (() => {
             const s = new Date(tempStart)
             const e = new Date(tempEnd)
-            const nights = Math.max(0, Math.round(Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)))
+            const nights = Math.max(
+              0,
+              Math.round(Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24))
+            )
             const days = nights + 1
             return (
-              <span className="inline-flex items-center gap-1.5 text-[#18181B] font-bold">
-                <span>{tempStart} ~ {tempEnd}</span>
-                <span className="px-1.5 py-0.2 rounded bg-[#1A9E7A] text-white text-[10px] font-black">
-                  {nights}박 {days}일
+              <span className="inline-flex items-center gap-2 text-[#18181B] font-extrabold">
+                <span>
+                  {tempStart} ~ {tempEnd}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-[#1A9E7A] text-white text-[11px] font-extrabold">
+                  {nights === 0 ? "당일치기" : `${nights}박 ${days}일`}
                 </span>
               </span>
             )
@@ -178,22 +217,23 @@ export function DateRangePicker({
       </div>
 
       {/* 요일 헤더 */}
-      <div className="grid grid-cols-7 text-center text-[11px] font-bold text-[#8A8A93] mb-1">
+      <div className="grid grid-cols-7 text-center text-xs font-extrabold text-[#8A8A93] mb-1.5">
         {WEEKDAYS.map((w, idx) => (
-          <div key={w} className={idx === 0 ? "text-rose-500" : idx === 6 ? "text-blue-500" : ""}>
+          <div
+            key={w}
+            className={idx === 0 ? "text-rose-500" : idx === 6 ? "text-blue-500" : ""}
+          >
             {w}
           </div>
         ))}
       </div>
 
       {/* 달력 날짜 그리드 */}
-      <div className="grid grid-cols-7 gap-y-1 text-center text-xs">
-        {/* 첫째 날 이전 빈 칸 */}
+      <div className="grid grid-cols-7 gap-y-1 text-center text-sm">
         {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-          <div key={`empty-${i}`} className="h-8" />
+          <div key={`empty-${i}`} className="h-9" />
         ))}
 
-        {/* 날짜들 */}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1
           const dateStr = formatYmd(currentYear, currentMonth, day)
@@ -216,19 +256,19 @@ export function DateRangePicker({
               key={dateStr}
               onMouseEnter={() => setHoverDate(dateStr)}
               onClick={() => handleDateClick(dateStr)}
-              className={`relative h-8 flex items-center justify-center cursor-pointer transition-colors ${
+              className={`relative h-9 flex items-center justify-center cursor-pointer transition-colors ${
                 isBetween || isHoverBetween ? "bg-[#EDFAF4]" : ""
               } ${isStart && tempEnd ? "rounded-l-full" : ""} ${
                 isEnd && tempStart ? "rounded-r-full" : ""
               }`}
             >
               <span
-                className={`flex size-7.5 items-center justify-center rounded-full text-xs font-semibold transition ${
+                className={`flex size-8.5 items-center justify-center rounded-full text-xs sm:text-sm font-bold transition ${
                   isSelectedEndpoint
-                    ? "bg-[#1A9E7A] text-white shadow-sm font-bold scale-105"
+                    ? "bg-[#1A9E7A] text-white shadow-sm font-extrabold scale-105"
                     : isBetween || isHoverBetween
-                    ? "text-[#1A9E7A] font-bold"
-                    : "hover:bg-slate-100 text-[#27272A]"
+                      ? "text-[#1A9E7A] font-extrabold"
+                      : "hover:bg-slate-100 text-[#27272A]"
                 }`}
               >
                 {day}
@@ -239,20 +279,20 @@ export function DateRangePicker({
       </div>
 
       {/* 하단 툴바 (초기화 & 닫기) */}
-      <div className="mt-3 pt-2.5 border-t border-[#E2E2DA]/80 flex items-center justify-between text-xs">
+      <div className="mt-3.5 pt-3 border-t border-[#E2E2DA]/80 flex items-center justify-between text-xs">
         <button
           type="button"
           onClick={handleReset}
-          className="flex items-center gap-1 text-[11px] font-semibold text-[#8A8A93] hover:text-rose-500 transition"
+          className="flex items-center gap-1.5 text-xs font-bold text-[#8A8A93] hover:text-rose-500 transition cursor-pointer"
         >
-          <RotateCcw className="size-3" />
-          <span>초대일 초기화</span>
+          <RotateCcw className="size-3.5" />
+          <span>날짜 초기화</span>
         </button>
 
         <button
           type="button"
           onClick={onClose}
-          className="text-[11px] font-bold text-[#6B6B72] hover:text-[#18181B] px-2.5 py-1 rounded-lg hover:bg-slate-100 transition"
+          className="text-xs font-extrabold text-[#52525B] hover:text-[#18181B] px-3 py-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer"
         >
           닫기
         </button>
