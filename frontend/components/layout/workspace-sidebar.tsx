@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import {
   Compass,
   Plus,
@@ -21,11 +21,16 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react"
-import { authService, type UserResponse } from "@/lib/auth-service"
+import {
+  authService,
+  type UserResponse,
+} from "@/lib/auth-service"
+import { UserAvatar } from "@/components/ui/user-avatar"
 import { tripService, type TripResponse } from "@/lib/trip-service"
 import { Tooltip } from "@/components/ui/tooltip"
 import { showToast, showConfirm } from "@/components/ui/system-alert"
 import { DateRangePicker, parseDateRangeInfo } from "@/components/ui/date-range-picker"
+import { ProfileEditModal } from "@/components/modals/profile-edit-modal"
 
 export interface WorkspaceSidebarProps {
   currentTripId?: string | number
@@ -71,6 +76,8 @@ export function WorkspaceSidebar({
   className = "",
 }: WorkspaceSidebarProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const isSettingsActive = pathname === "/settings" || pathname === "/mypage"
 
   const [user, setUser] = useState<UserResponse | null>(null)
   const [trips, setTrips] = useState<TripResponse[]>([])
@@ -93,8 +100,22 @@ export function WorkspaceSidebar({
   const [showInternalDatePicker, setShowInternalDatePicker] = useState(false)
   const [isCreatingTrip, setIsCreatingTrip] = useState(false)
 
-  function handleOpenAccountSettings() {
-    showToast("마이페이지 및 계정 연동 설정은 준비 중입니다.", "info")
+  // 프로필 설정 모달 상태 (프로필 영역 클릭 시 오픈)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+
+  function handleOpenProfileModal() {
+    setIsMobileOpen(false)
+    if (user && user.provider === "LOCAL" && !user.emailVerified) {
+      showToast("프로필 설정을 변경하려면 먼저 이메일 인증을 완료해 주세요.", "warning")
+      router.push("/settings")
+      return
+    }
+    setIsProfileModalOpen(true)
+  }
+
+  function handleNavigateSettings() {
+    setIsMobileOpen(false)
+    router.push("/settings")
   }
 
   function handleConfirmLogout() {
@@ -102,10 +123,20 @@ export function WorkspaceSidebar({
   }
 
   useEffect(() => {
+    router.prefetch("/settings")
+    router.prefetch("/")
+
     const session = authService.getSession()
     setUser(session)
     if (session) {
       loadTrips(session.id)
+      authService
+        .getMe(session.id)
+        .then((latest) => {
+          setUser(latest)
+          authService.setSession(latest)
+        })
+        .catch(() => {})
     }
 
     try {
@@ -114,6 +145,38 @@ export function WorkspaceSidebar({
         setIsCollapsed(saved === "true")
       }
     } catch {}
+  }, [])
+
+  // 전역 유저 정보 및 새 여행 모달 이벤트 수신
+  useEffect(() => {
+    function handleUserUpdated(e: Event) {
+      const customEvent = e as CustomEvent<UserResponse | null>
+      setUser(customEvent.detail)
+    }
+    function handleOpenCreateTripEvent(e: Event) {
+      const customEvent = e as CustomEvent<{
+        destination?: string
+        startDate?: string
+        endDate?: string
+      } | undefined>
+      const preset = customEvent.detail
+      if (preset) {
+        if (preset.destination) {
+          setNewDestination(preset.destination)
+          setNewTitle((prev) => prev || `${preset.destination} 여행 계획`)
+        }
+        if (preset.startDate) setNewStartDate(preset.startDate)
+        if (preset.endDate) setNewEndDate(preset.endDate)
+      }
+      setShowInternalDatePicker(false)
+      setIsInternalCreateOpen(true)
+    }
+    window.addEventListener("wandermap:user-updated", handleUserUpdated)
+    window.addEventListener("wandermap:open-create-trip", handleOpenCreateTripEvent)
+    return () => {
+      window.removeEventListener("wandermap:user-updated", handleUserUpdated)
+      window.removeEventListener("wandermap:open-create-trip", handleOpenCreateTripEvent)
+    }
   }, [])
 
   // ESC 키로 모달 닫기 지원
@@ -257,16 +320,17 @@ export function WorkspaceSidebar({
 
   const sidebarInner = (
     <aside
-      className={`flex h-full flex-col justify-between text-[#18181B] select-none z-10 transition-[width] duration-200 ease-[cubic-bezier(0.2,0,0,1)] will-change-[width] overflow-hidden ${
+      className={`flex h-full flex-col justify-between text-[#18181B] select-none z-10 transition-[width] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] overflow-hidden ${
         isFloating
           ? "rounded-3xl border border-[#E2E2DA]/90 bg-white/90 backdrop-blur-xl shadow-[0_12px_40px_rgb(0,0,0,0.06)]"
           : "border-r border-[#E2E2DA] bg-[#FBFBF9] shadow-xs"
       } ${isCollapsed ? "w-[74px]" : "w-80"}`}
     >
-      {/* 1. 상단: 로고 & 새 여행 / 코드 합류 버튼 */}
-      <div className="border-b border-[#E2E2DA]/70 px-4 pt-4 pb-4 transition-all duration-200">
+      {/* 1. 상단: 로고 & 새 여행 / 코드 합류 버튼
+          (접힘 시 w-[74px] 고정 레일 기준 정렬, 펼침 시 w-80 고정으로 아이콘 좌우 튐 현상 원천 차단) */}
+      <div className="border-b border-[#E2E2DA]/70 pt-4 pb-4">
         {isCollapsed ? (
-          <div className="flex flex-col items-center w-full">
+          <div className="w-[74px] flex flex-col items-center shrink-0">
             <div className="flex h-10 items-center justify-center">
               <Tooltip content="사이드바 열기" side="right">
                 <button
@@ -295,7 +359,7 @@ export function WorkspaceSidebar({
             </Tooltip>
           </div>
         ) : (
-          <>
+          <div className="w-80 px-[17px] shrink-0">
             <div className="flex h-10 items-center justify-between">
               <div
                 onClick={handleNavigateHome}
@@ -304,7 +368,7 @@ export function WorkspaceSidebar({
                 <span className="flex size-10 items-center justify-center rounded-[50%_50%_50%_4px] bg-[#1A9E7A] text-white shadow-sm shadow-[#1A9E7A]/20 group-hover:scale-105 transition shrink-0">
                   <Compass className="size-5" />
                 </span>
-                <span className="text-xl font-black tracking-tight text-[#18181B]">
+                <span className="text-xl font-black tracking-tight text-[#18181B] whitespace-nowrap">
                   WanderMap
                 </span>
               </div>
@@ -313,7 +377,7 @@ export function WorkspaceSidebar({
                 <button
                   type="button"
                   onClick={() => toggleCollapse(true)}
-                  className="flex size-8 items-center justify-center rounded-xl hover:bg-slate-200/60 text-[#6B6B72] hover:text-[#18181B] transition cursor-pointer"
+                  className="flex size-8 items-center justify-center rounded-xl hover:bg-slate-200/60 text-[#6B6B72] hover:text-[#18181B] transition cursor-pointer shrink-0"
                   aria-label="접기"
                 >
                   <PanelLeftClose className="size-4.5" />
@@ -322,33 +386,35 @@ export function WorkspaceSidebar({
             </div>
 
             {/* 큼직하고 직관적인 액션 버튼 */}
-            <div className="mt-4 grid grid-cols-[1fr_auto] gap-2 animate-in fade-in duration-150">
+            <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
               <button
                 type="button"
                 onClick={handleOpenCreateTrip}
-                className="flex items-center justify-center gap-1.5 h-11 rounded-2xl bg-[#1A9E7A] hover:bg-[#158063] px-4 text-sm font-bold text-white shadow-sm shadow-[#1A9E7A]/20 transition cursor-pointer group"
+                className="flex items-center justify-center gap-1.5 h-11 rounded-2xl bg-[#1A9E7A] hover:bg-[#158063] px-4 text-sm font-bold text-white shadow-sm shadow-[#1A9E7A]/20 transition cursor-pointer group whitespace-nowrap"
               >
-                <Plus className="size-4 group-hover:rotate-90 transition-transform duration-200" />
+                <Plus className="size-4 group-hover:rotate-90 transition-transform duration-200 shrink-0" />
                 <span>새 여행</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleOpenInviteModal}
-                className="flex items-center gap-1.5 h-11 rounded-2xl border border-[#E2E2DA] bg-white hover:border-[#1A9E7A] hover:text-[#1A9E7A] px-3.5 text-sm font-bold text-[#27272A] transition cursor-pointer"
+                className="flex items-center gap-1.5 h-11 rounded-2xl border border-[#E2E2DA] bg-white hover:border-[#1A9E7A] hover:text-[#1A9E7A] px-3.5 text-sm font-bold text-[#27272A] transition cursor-pointer whitespace-nowrap"
               >
-                <Ticket className="size-4 text-[#1A9E7A]" />
+                <Ticket className="size-4 text-[#1A9E7A] shrink-0" />
                 <span>코드 합류</span>
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
 
       {/* 2. 중앙: 내 여행 목록 */}
       <div
-        className={`flex-1 overflow-y-auto custom-scrollbar ${
-          isCollapsed ? "p-2.5 space-y-2.5 flex flex-col items-center" : "p-4 space-y-3"
+        className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar ${
+          isCollapsed
+            ? "w-[74px] py-2.5 space-y-2.5 flex flex-col items-center shrink-0"
+            : "w-80 p-4 space-y-3 shrink-0"
         }`}
       >
         {!isCollapsed && (
@@ -447,49 +513,75 @@ export function WorkspaceSidebar({
       </div>
 
       {/* 3. 하단 고정: 프로필 & 설정/로그아웃 */}
-      <div
-        className={`border-t border-[#E2E2DA]/80 bg-white/80 transition-all duration-200 ${
-          isCollapsed ? "p-3 flex flex-col items-center" : "p-4"
-        }`}
-      >
+      <div className="border-t border-[#E2E2DA]/80 bg-white/80">
         {user ? (
           isCollapsed ? (
-            <Tooltip content={`${user.nickname} (계정 설정)`} side="right">
-              <button
-                type="button"
-                onClick={handleOpenAccountSettings}
-                className="size-10 rounded-full bg-[#1A9E7A]/10 border border-[#1A9E7A]/30 flex items-center justify-center text-sm font-bold text-[#1A9E7A] hover:bg-[#1A9E7A] hover:text-white transition cursor-pointer"
-              >
-                {user.nickname ? user.nickname.charAt(0) : "W"}
-              </button>
-            </Tooltip>
+            <div className="w-[74px] py-3 flex flex-col items-center gap-2 shrink-0">
+              <Tooltip content={`${user.nickname} (프로필 설정)`} side="right">
+                <button
+                  type="button"
+                  onClick={handleOpenProfileModal}
+                  className="rounded-full cursor-pointer"
+                >
+                  <UserAvatar
+                    profileImage={user.profileImage}
+                    nickname={user.nickname}
+                    size="sm"
+                    className="border-2 border-white shadow-sm ring-1 ring-[#E2E2DA] hover:ring-[#1A9E7A]"
+                  />
+                </button>
+              </Tooltip>
+              <Tooltip content="설정 및 마이페이지" side="right">
+                <button
+                  type="button"
+                  onClick={handleNavigateSettings}
+                  className={`flex size-9 items-center justify-center rounded-xl transition cursor-pointer ${
+                    isSettingsActive
+                      ? "bg-[#EDFAF4] text-[#1A9E7A]"
+                      : "text-[#6B6B72] hover:bg-slate-100 hover:text-[#18181B]"
+                  }`}
+                  aria-label="설정 페이지 이동"
+                >
+                  <Settings className="size-4.5" />
+                </button>
+              </Tooltip>
+            </div>
           ) : (
-            <div className="flex items-center justify-between gap-2 animate-in fade-in duration-150">
+            <div className="w-80 p-4 flex items-center justify-between gap-2 shrink-0">
+              {/* 좌측: (프로필사진, 닉네임, 이메일) 클릭 시 프로필 설정 모달 오픈 */}
               <div
-                onClick={handleOpenAccountSettings}
-                className="flex items-center gap-3 min-w-0 flex-1 p-1.5 rounded-xl hover:bg-slate-100/80 transition cursor-pointer group"
-                title="계정 설정"
+                onClick={handleOpenProfileModal}
+                className="flex items-center gap-3 min-w-0 flex-1 p-1.5 rounded-2xl hover:bg-slate-100/90 transition cursor-pointer group"
+                title="클릭하여 프로필 설정 열기"
               >
-                <div className="size-10 rounded-2xl bg-[#EDFAF4] border border-[#1A9E7A]/30 flex items-center justify-center text-sm font-black text-[#1A9E7A] group-hover:bg-[#1A9E7A] group-hover:text-white transition shrink-0">
-                  {user.nickname ? user.nickname.charAt(0) : "W"}
-                </div>
+                <UserAvatar
+                  profileImage={user.profileImage}
+                  nickname={user.nickname}
+                  size="sm"
+                  className="border-2 border-white shadow-xs ring-1 ring-[#E2E2DA] group-hover:ring-[#1A9E7A]"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-bold text-[#18181B]">
+                    <span className="truncate text-sm font-extrabold text-[#18181B] group-hover:text-[#1A9E7A] transition">
                       {user.nickname}
                     </span>
                   </div>
-                  <p className="truncate text-xs text-[#8A8A93]">{user.email}</p>
+                  <p className="truncate text-xs font-medium text-[#8A8A93]">{user.email}</p>
                 </div>
               </div>
 
+              {/* 우측: 톱니바퀴(설정 페이지 이동) & 로그아웃 버튼 */}
               <div className="flex items-center gap-1 shrink-0">
-                <Tooltip content="계정 설정" side="top">
+                <Tooltip content="설정 및 마이페이지" side="top">
                   <button
                     type="button"
-                    onClick={handleOpenAccountSettings}
-                    className="flex size-9 items-center justify-center rounded-xl text-[#6B6B72] hover:bg-slate-100 hover:text-[#18181B] transition cursor-pointer"
-                    aria-label="계정 설정"
+                    onClick={handleNavigateSettings}
+                    className={`flex size-9 items-center justify-center rounded-xl transition cursor-pointer ${
+                      isSettingsActive
+                        ? "bg-[#EDFAF4] text-[#1A9E7A]"
+                        : "text-[#6B6B72] hover:bg-slate-100 hover:text-[#18181B]"
+                    }`}
+                    aria-label="설정 페이지 이동"
                   >
                     <Settings className="size-4.5" />
                   </button>
@@ -508,12 +600,14 @@ export function WorkspaceSidebar({
             </div>
           )
         ) : (
-          <button
-            onClick={() => router.push("/login")}
-            className="w-full rounded-xl bg-slate-900 py-3 text-sm font-bold text-white hover:bg-slate-800 transition"
-          >
-            {isCollapsed ? <UserIcon className="size-4.5 mx-auto" /> : "로그인하기"}
-          </button>
+          <div className={isCollapsed ? "w-[74px] p-3 shrink-0" : "w-80 p-4 shrink-0"}>
+            <button
+              onClick={() => router.push("/login")}
+              className="w-full rounded-xl bg-slate-900 py-3 text-sm font-bold text-white hover:bg-slate-800 transition"
+            >
+              {isCollapsed ? <UserIcon className="size-4.5 mx-auto" /> : "로그인하기"}
+            </button>
+          </div>
         )}
       </div>
     </aside>
@@ -553,7 +647,7 @@ export function WorkspaceSidebar({
 
       {/* 데스크톱 사이드바 */}
       <div
-        className={`hidden lg:block h-screen shrink-0 transition-[width] duration-200 ease-[cubic-bezier(0.2,0,0,1)] ${
+        className={`hidden lg:block h-screen shrink-0 transition-[width] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isFloating
             ? isCollapsed
               ? "w-[86px] p-3 pr-0"
@@ -753,6 +847,16 @@ export function WorkspaceSidebar({
           </div>
         </div>
       )}
+
+      {/* =====================================================================
+          모달 3: 프로필 설정 모달 (사이드바 프로필 영역 클릭 시 오픈)
+         ===================================================================== */}
+      <ProfileEditModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={user}
+        onSaved={(updated) => setUser(updated)}
+      />
     </>
   )
 }

@@ -51,11 +51,18 @@ export default function HomePage() {
     setIsCreateModalOpen(true)
   }
 
-  // 1. 세션 확인
+  // 1. 세션 확인 및 유저 변경 이벤트 구독
   useEffect(() => {
     const session = authService.getSession()
     setCurrentUser(session)
     setIsAuthChecked(true)
+
+    function handleUserUpdated(e: Event) {
+      const customEvent = e as CustomEvent<UserResponse | null>
+      setCurrentUser(customEvent.detail)
+    }
+    window.addEventListener("wandermap:user-updated", handleUserUpdated)
+    return () => window.removeEventListener("wandermap:user-updated", handleUserUpdated)
   }, [])
 
   // ESC 키로 새 여행 모달 닫기
@@ -103,29 +110,18 @@ export default function HomePage() {
   const modalRangeInfo = parseDateRangeInfo(startDate, endDate)
 
   // =========================================================================
-  // CASE A: 로그인 유저 화면 (플로팅 트래블 보관함 + 올인원 트래블 컴포저 허브)
+  // CASE A: 로그인 유저 화면 (우측 실 서비스 영역만 렌더링 - 좌측 사이드바는 WorkspaceAppShell에서 고정 유지)
   // =========================================================================
   if (currentUser) {
     return (
-      <GradientBackground
-        variant="workspace"
-        className="flex h-screen w-screen overflow-hidden font-sans"
-      >
-        <div className="flex h-screen w-screen overflow-hidden">
-          {/* 좌측 플로팅 트래블 보관함 사이드바 */}
-          <WorkspaceSidebar
-            variant="floating"
-            onOpenNewTripModal={() => handleOpenCreateModal()}
+      <>
+        {/* 중앙 올인원 트래블 컴포저 영역 */}
+        <main className="flex-1 h-full overflow-y-auto flex flex-col justify-center items-center animate-in fade-in duration-150">
+          <AiPromptHub
+            currentUser={currentUser}
+            onOpenManualModal={handleOpenCreateModal}
           />
-
-          {/* 중앙 올인원 트래블 컴포저 영역 */}
-          <main className="flex-1 h-full overflow-y-auto flex flex-col justify-center items-center">
-            <AiPromptHub
-              currentUser={currentUser}
-              onOpenManualModal={handleOpenCreateModal}
-            />
-          </main>
-        </div>
+        </main>
 
         {/* 새 여행 계획 직접 만들기 모달 (공통 DateRangePicker 재사용 & 바깥 클릭 닫기 지원) */}
         {isCreateModalOpen && (
@@ -237,7 +233,7 @@ export default function HomePage() {
             </div>
           </div>
         )}
-      </GradientBackground>
+      </>
     )
   }
 
