@@ -4,7 +4,7 @@ import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { GradientBackground } from "@/components/ui/jade-sky"
 import { SignInPage } from "@/components/ui/sign-in"
-import { authService } from "@/lib/auth-service"
+import { authService, generateRandomProfileImage } from "@/lib/auth-service"
 import { X, ShieldCheck, FileText } from "lucide-react"
 
 function LoginContent() {
@@ -70,8 +70,8 @@ function LoginContent() {
         id: 999,
         email: `${provider.toLowerCase()}_user@wandermap.io`,
         nickname: `${provider} 여행자`,
-        profileImage: null,
-        bio: "나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.",
+        profileImage: generateRandomProfileImage(),
+        bio: "",
         emailVerified: true,
         provider: provider.toUpperCase(),
         createdAt: new Date().toISOString(),
