@@ -4,13 +4,19 @@ CREATE TABLE IF NOT EXISTS users (
     email          VARCHAR(255) UNIQUE NOT NULL,
     password       VARCHAR(255),               -- 이메일 회원 비밀번호 (소셜 전용은 NULL 허용)
     nickname       VARCHAR(50)  NOT NULL,
-    profile_image  VARCHAR(500),
+    profile_image  TEXT,                       -- 이모지+배경 조합(emoji:😺?bg=sage) 또는 크롭된 이미지 데이터
     bio            VARCHAR(255) DEFAULT '나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.',
     email_verified BOOLEAN      DEFAULT FALSE NOT NULL,
-    provider       VARCHAR(20),                -- 최초 가입 제공자 (LOCAL | KAKAO | NAVER | GOOGLE)
+    provider       VARCHAR(20)  DEFAULT 'LOCAL', -- 최초 가입 제공자 (LOCAL | KAKAO | NAVER | GOOGLE)
     oauth_id       VARCHAR(255),
     created_at     TIMESTAMP    DEFAULT NOW()
 );
+
+-- 기존 운영/개발 DB 테이블 스키마 동기화 (변경분 반영)
+ALTER TABLE users ALTER COLUMN profile_image TYPE TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(255) DEFAULT '나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS provider VARCHAR(20) DEFAULT 'LOCAL';
 
 -- 소셜 계정 연동 (1:N 매핑)
 CREATE TABLE IF NOT EXISTS user_social_accounts (
@@ -127,7 +133,7 @@ CREATE INDEX IF NOT EXISTS idx_trips_invite_code              ON trips(invite_co
 -- 초기 데모용 데이터 적재 (초기 로딩 시 에러 방지)
 -- -----------------------------------------------------
 INSERT INTO users (id, email, password, nickname, profile_image, bio, email_verified, provider, oauth_id, created_at)
-VALUES (1, 'test@wandermap.io', '$2a$10$Ew.YQ7q5y6cIqVlE.o4B9eM6rWp.XyY0C.t7G.zR8qN6x.N5aK5tO', '미때줌', 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=200&q=80', '나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.', TRUE, 'NAVER', 'mock-oauth-id', NOW())
+VALUES (1, 'test@wandermap.io', '$2a$10$Ew.YQ7q5y6cIqVlE.o4B9eM6rWp.XyY0C.t7G.zR8qN6x.N5aK5tO', '미때줌', 'emoji:😺?bg=sage', '나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.', TRUE, 'NAVER', 'mock-oauth-id', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- 시퀀스 충돌 방지를 위해 users_id_seq 값 동기화
