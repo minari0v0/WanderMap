@@ -12,12 +12,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at     TIMESTAMP    DEFAULT NOW()
 );
 
--- 기존 운영/개발 DB 테이블 스키마 동기화 (변경분 반영)
-ALTER TABLE users ALTER COLUMN profile_image TYPE TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(255) DEFAULT '나만의 특별한 무드를 담은 취향 저장소를 만들고 있습니다.';
-ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE NOT NULL;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS provider VARCHAR(20) DEFAULT 'LOCAL';
-
 -- 소셜 계정 연동 (1:N 매핑)
 CREATE TABLE IF NOT EXISTS user_social_accounts (
     id             BIGSERIAL PRIMARY KEY,
@@ -48,7 +42,7 @@ CREATE TABLE IF NOT EXISTS trips (
     start_date   DATE         NOT NULL,
     end_date     DATE         NOT NULL,
     status       VARCHAR(20)  DEFAULT 'PLANNING',
-    created_by   BIGINT       REFERENCES users(id),
+    created_by   BIGINT       REFERENCES users(id) ON DELETE CASCADE,
     created_at   TIMESTAMP    DEFAULT NOW()
 );
 
@@ -56,7 +50,7 @@ CREATE TABLE IF NOT EXISTS trips (
 CREATE TABLE IF NOT EXISTS trip_members (
     id        BIGSERIAL PRIMARY KEY,
     trip_id   BIGINT REFERENCES trips(id) ON DELETE CASCADE,
-    user_id   BIGINT REFERENCES users(id),
+    user_id   BIGINT REFERENCES users(id) ON DELETE CASCADE,
     role      VARCHAR(10) DEFAULT 'MEMBER',
     joined_at TIMESTAMP   DEFAULT NOW(),
     UNIQUE (trip_id, user_id)
@@ -66,7 +60,7 @@ CREATE TABLE IF NOT EXISTS trip_members (
 CREATE TABLE IF NOT EXISTS preferences (
     id                BIGSERIAL PRIMARY KEY,
     trip_id           BIGINT REFERENCES trips(id) ON DELETE CASCADE,
-    user_id           BIGINT REFERENCES users(id),
+    user_id           BIGINT REFERENCES users(id) ON DELETE CASCADE,
     food_categories   JSONB,
     activity_types    JSONB,
     excluded_keywords VARCHAR(200),
@@ -75,28 +69,29 @@ CREATE TABLE IF NOT EXISTS preferences (
     UNIQUE (trip_id, user_id)
 );
 
--- Naver API 장소 캐시
+-- Google Maps 장소 캐시
 CREATE TABLE IF NOT EXISTS places (
-    id             BIGSERIAL PRIMARY KEY,
-    naver_place_id VARCHAR(100) UNIQUE,
-    name           VARCHAR(200) NOT NULL,
-    category       VARCHAR(100),
-    address        VARCHAR(300),
-    latitude       DECIMAL(10,7),
-    longitude      DECIMAL(10,7),
-    cached_at      TIMESTAMP DEFAULT NOW()
+    id              BIGSERIAL PRIMARY KEY,
+    google_place_id VARCHAR(100) UNIQUE,
+    name            VARCHAR(200) NOT NULL,
+    category        VARCHAR(100),
+    address         VARCHAR(300),
+    latitude        DECIMAL(10,7),
+    longitude       DECIMAL(10,7),
+    cached_at       TIMESTAMP DEFAULT NOW()
 );
 
--- 일자별 일정
+-- 일자별 일정 (일자별 마크다운/표 메모 포함)
 CREATE TABLE IF NOT EXISTS itinerary_days (
     id         BIGSERIAL PRIMARY KEY,
     trip_id    BIGINT REFERENCES trips(id) ON DELETE CASCADE,
     day_number INT  NOT NULL,
     date       DATE NOT NULL,
+    memo       TEXT,
     UNIQUE (trip_id, day_number)
 );
 
--- 일정 내 장소
+-- 일정 내 장소 (마크다운/표 메모 및 여행 중 별점·한줄평·사진 다이어리 기록 포함)
 CREATE TABLE IF NOT EXISTS itinerary_places (
     id                       BIGSERIAL PRIMARY KEY,
     day_id                   BIGINT REFERENCES itinerary_days(id) ON DELETE CASCADE,
@@ -105,6 +100,10 @@ CREATE TABLE IF NOT EXISTS itinerary_places (
     expected_visit_time      TIME,
     duration_minutes         INT  DEFAULT 60,
     travel_minutes_from_prev INT  DEFAULT 0,
+    memo                     TEXT,
+    rating                   INT,
+    review                   TEXT,
+    photos                   JSONB DEFAULT '[]'::jsonb,
     status                   VARCHAR(20) DEFAULT 'VOTING',
     created_at               TIMESTAMP DEFAULT NOW()
 );
@@ -113,7 +112,7 @@ CREATE TABLE IF NOT EXISTS itinerary_places (
 CREATE TABLE IF NOT EXISTS place_votes (
     id                 BIGSERIAL PRIMARY KEY,
     itinerary_place_id BIGINT REFERENCES itinerary_places(id) ON DELETE CASCADE,
-    user_id            BIGINT REFERENCES users(id),
+    user_id            BIGINT REFERENCES users(id) ON DELETE CASCADE,
     vote_type          VARCHAR(10) NOT NULL,   -- UP | DOWN
     voted_at           TIMESTAMP DEFAULT NOW(),
     UNIQUE (itinerary_place_id, user_id)
@@ -146,3 +145,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO trip_members (id, trip_id, user_id, role, joined_at)
 VALUES (999, 999, 1, 'OWNER', NOW())
 ON CONFLICT (id) DO NOTHING;
+
+-- 시퀀스 충돌 방지를 위해 trips_id_seq 및 trip_members_id_seq 값 동기화
+SELECT setval('trips_id_seq', (SELECT COALESCE(MAX(id), 1) FROM trips));
+SELECT setval('trip_members_id_seq', (SELECT COALESCE(MAX(id), 1) FROM trip_members));
