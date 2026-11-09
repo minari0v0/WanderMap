@@ -17,9 +17,9 @@ const notoSansKr = Noto_Sans_KR({
 })
 
 export const metadata: Metadata = {
-  title: 'WanderMap — 그룹 여행 동선 플래너',
+  title: 'WanderMap — 여행 동선 플래너 & 여행 다이어리',
   description:
-    '스프레드시트로 싸우던 그룹 여행 계획, AI가 네이버 실데이터로 동선을 정리해드립니다. 국내 여행 전용 실시간 동선 조율 플래너.',
+    '그룹 취향 투표부터 구글 지도(Google Maps) 기반 최적 동선 설계, 마크다운 메모와 사진·별점 기록까지 하나로 이어지는 올인원 여행 플래너 & 다이어리.',
   generator: 'v0.app',
   icons: {
     icon: [

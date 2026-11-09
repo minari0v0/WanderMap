@@ -2,7 +2,8 @@
 
 import { use, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { tripService, type TripResponse, type PreferenceResponse } from "@/lib/trip-service"
+import { tripService, type TripResponse } from "@/lib/trip-service"
+import { authService } from "@/lib/auth-service"
 import { ArrowLeft, Check, Compass, Sparkles, Utensils, Activity, Ban, MessageSquare } from "lucide-react"
 
 interface PreferencesPageProps {
@@ -33,7 +34,6 @@ const ACTIVITY_OPTIONS = [
 export default function PreferencesPage({ params }: PreferencesPageProps) {
   const router = useRouter()
   const { tripId } = use(params)
-  const numericTripId = Number(tripId)
 
   const [trip, setTrip] = useState<TripResponse | null>(null)
   const [selectedFoods, setSelectedFoods] = useState<string[]>([])
@@ -48,16 +48,20 @@ export default function PreferencesPage({ params }: PreferencesPageProps) {
 
   useEffect(() => {
     async function loadData() {
+      const session = authService.getSession()
+      if (!session) {
+        router.replace("/login")
+        return
+      }
+
       try {
-        if (isNaN(numericTripId)) {
-          throw new Error("올바르지 않은 여행 ID입니다.")
-        }
-        // 방 정보 로드
-        const tripData = await tripService.getTrip(numericTripId)
+        const isNumericId = /^\d+$/.test(tripId)
+        const tripData = isNumericId
+          ? await tripService.getTrip(Number(tripId))
+          : await tripService.getTripByInviteCode(tripId)
         setTrip(tripData)
 
-        // 이전에 제출한 선호도가 있는지 확인 (userId: 1)
-        const myPref = await tripService.getMyPreference(numericTripId, 1)
+        const myPref = await tripService.getMyPreference(tripData.id, session.id)
         if (myPref) {
           setSelectedFoods(myPref.foodCategories || [])
           setSelectedActivities(myPref.activityTypes || [])
@@ -72,7 +76,7 @@ export default function PreferencesPage({ params }: PreferencesPageProps) {
       }
     }
     loadData()
-  }, [numericTripId])
+  }, [tripId, router])
 
   function toggleFood(label: string) {
     setSelectedFoods((prev) =>
@@ -88,21 +92,27 @@ export default function PreferencesPage({ params }: PreferencesPageProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const session = authService.getSession()
+    if (!session || !trip) {
+      router.push("/login")
+      return
+    }
+
     setIsSubmitting(true)
     setMessage(null)
 
     try {
-      await tripService.submitPreference(numericTripId, {
+      await tripService.submitPreference(trip.id, {
         foodCategories: selectedFoods,
         activityTypes: selectedActivities,
         excludedKeywords: excludedKeywords.trim(),
         freeMemo: freeMemo.trim(),
-        userId: 1,
+        userId: session.id,
       })
 
       setMessage({ type: "success", text: "선호도가 성공적으로 저장되었습니다! 잠시 후 여행 방으로 이동합니다." })
       setTimeout(() => {
-        router.push(`/trips/${tripId}`)
+        router.push(`/trips/${trip.inviteCode || tripId}`)
       }, 1200)
     } catch (err: any) {
       setMessage({ type: "error", text: err.response?.data?.message || "선호도 저장에 실패했습니다." })
@@ -163,11 +173,10 @@ export default function PreferencesPage({ params }: PreferencesPageProps) {
 
         {message && (
           <div
-            className={`rounded-xl p-3.5 text-xs font-medium border ${
-              message.type === "success"
+            className={`rounded-xl p-3.5 text-xs font-medium border ${message.type === "success"
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : "bg-red-50 text-red-600 border-red-200"
-            }`}
+              }`}
           >
             {message.text}
           </div>
@@ -190,11 +199,10 @@ export default function PreferencesPage({ params }: PreferencesPageProps) {
                     key={item.id}
                     type="button"
                     onClick={() => toggleFood(item.label)}
-                    className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all ${
-                      isSelected
+                    className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all ${isSelected
                         ? "bg-[#1A9E7A] text-white shadow-sm ring-2 ring-[#1A9E7A]/20"
                         : "border border-[#E2E2DA] bg-white text-[#6B6B72] hover:bg-[#F8F8F6]"
-                    }`}
+                      }`}
                   >
                     {item.label}
                     {isSelected && <Check className="size-3 stroke-[3]" />}
@@ -220,11 +228,10 @@ export default function PreferencesPage({ params }: PreferencesPageProps) {
                     key={item.id}
                     type="button"
                     onClick={() => toggleActivity(item.label)}
-                    className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all ${
-                      isSelected
+                    className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all ${isSelected
                         ? "bg-[#1A9E7A] text-white shadow-sm ring-2 ring-[#1A9E7A]/20"
                         : "border border-[#E2E2DA] bg-white text-[#6B6B72] hover:bg-[#F8F8F6]"
-                    }`}
+                      }`}
                   >
                     {item.label}
                     {isSelected && <Check className="size-3 stroke-[3]" />}
@@ -277,8 +284,8 @@ export default function PreferencesPage({ params }: PreferencesPageProps) {
             {isSubmitting
               ? "저장 중..."
               : isSubmittedBefore
-              ? "선호도 수정하여 저장하기"
-              : "선호도 설문 제출하기 →"}
+                ? "선호도 수정하여 저장하기"
+                : "선호도 설문 제출하기 →"}
           </button>
         </form>
       </main>
