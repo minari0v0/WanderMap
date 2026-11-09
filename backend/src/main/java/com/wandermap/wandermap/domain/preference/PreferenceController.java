@@ -9,7 +9,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/trips/{tripId}/preferences")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class PreferenceController {
 
     private final PreferenceService preferenceService;

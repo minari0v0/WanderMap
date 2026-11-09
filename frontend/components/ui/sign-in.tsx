@@ -61,24 +61,30 @@ export function SignInPage({
     setLocalError(null)
 
     if (currentMode === "signup") {
-      if (!nickname.trim()) {
+      const trimmedNickname = nickname.trim()
+      if (!trimmedNickname) {
         setLocalError("닉네임을 입력해 주세요.")
+        return
+      }
+      const nicknameRegex = /^[a-zA-Z0-9가-힣_\-\s]{2,16}$/
+      if (!nicknameRegex.test(trimmedNickname)) {
+        setLocalError("닉네임은 2~16자의 한글, 영문, 숫자만 사용 가능합니다.")
         return
       }
       if (!email.trim()) {
         setLocalError("이메일을 입력해 주세요.")
         return
       }
-      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,20}$/
+      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,20}$/
       if (!passwordRegex.test(password)) {
-        setLocalError("비밀번호는 영문, 숫자, 특수문자를 조합하여 8~20자여야 합니다.")
+        setLocalError("비밀번호는 영문과 숫자를 포함하여 8~20자여야 합니다.")
         return
       }
       if (password !== passwordConfirm) {
         setLocalError("비밀번호 확인이 일치하지 않습니다.")
         return
       }
-      onSignUp?.({ nickname: nickname.trim(), email: email.trim(), password })
+      onSignUp?.({ nickname: trimmedNickname, email: email.trim(), password })
     } else {
       if (!email.trim() || !password) {
         setLocalError("이메일과 비밀번호를 모두 입력해 주세요.")
@@ -330,7 +336,7 @@ export function SignInPage({
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={
                     currentMode === "signup"
-                      ? "8~20자 (영문, 숫자, 특수문자 조합)"
+                      ? "영문 + 숫자 포함 8~20자"
                       : "비밀번호 입력"
                   }
                   className="w-full rounded-xl border border-[#E2E2DA] bg-white/90 pl-10 pr-3.5 py-3 text-xs outline-none focus:border-[#1A9E7A] transition"
@@ -339,7 +345,7 @@ export function SignInPage({
               </div>
               {currentMode === "signup" && (
                 <p className="text-[10px] text-[#8A8A93] mt-1 pl-1">
-                  ※ 영문, 숫자, 특수문자(!@#$%^&* 등)를 포함하여 8~20자
+                  ※ 영문과 숫자를 포함하여 8~20자 (특수문자 사용 가능)
                 </p>
               )}
             </div>

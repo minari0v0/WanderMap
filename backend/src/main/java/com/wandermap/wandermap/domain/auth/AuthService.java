@@ -1,5 +1,9 @@
 package com.wandermap.wandermap.domain.auth;
 
+import com.wandermap.wandermap.domain.preference.PreferenceRepository;
+import com.wandermap.wandermap.domain.trip.Trip;
+import com.wandermap.wandermap.domain.trip.TripMemberRepository;
+import com.wandermap.wandermap.domain.trip.TripRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +24,9 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserSocialAccountRepository socialAccountRepository;
     private final EmailVerificationRepository emailVerificationRepository;
+    private final TripRepository tripRepository;
+    private final TripMemberRepository tripMemberRepository;
+    private final PreferenceRepository preferenceRepository;
     private final PasswordEncoder passwordEncoder;
 
     private static final java.util.regex.Pattern PASSWORD_PATTERN =
@@ -46,8 +53,14 @@ public class AuthService {
         String normalizedEmail = request.getEmail().trim().toLowerCase();
         String trimmedNickname = request.getNickname().trim();
 
+        if (!NICKNAME_PATTERN.matcher(trimmedNickname).matches()) {
+            throw new IllegalArgumentException("닉네임은 2~16자의 한글, 영문, 숫자만 사용 가능합니다.");
+        }
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다: " + normalizedEmail);
+        }
+        if (userRepository.existsByNickname(trimmedNickname)) {
+            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다: " + trimmedNickname);
         }
 
         User user = User.builder()
@@ -271,6 +284,20 @@ public class AuthService {
     @Transactional
     public void withdraw(Long userId) {
         User user = getUser(userId);
+
+        // 1. 유저가 제출한 선호도 설문 및 참여한 여정 멤버십 정리
+        preferenceRepository.deleteByUserId(userId);
+        tripMemberRepository.deleteByUser(user);
+
+        // 2. 유저가 생성한 여정 방 및 해당 방의 하위 데이터 정리
+        List<Trip> createdTrips = tripRepository.findByCreatedBy(user);
+        for (Trip trip : createdTrips) {
+            preferenceRepository.deleteByTripId(trip.getId());
+            tripMemberRepository.deleteByTrip(trip);
+            tripRepository.delete(trip);
+        }
+
+        // 3. 소셜 연동, 이메일 인증 내역 및 계정 영구 삭제
         socialAccountRepository.deleteByUserId(userId);
         emailVerificationRepository.deleteByEmail(user.getEmail());
         userRepository.delete(user);

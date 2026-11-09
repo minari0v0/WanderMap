@@ -8,4 +8,6 @@ public interface TripMemberRepository extends JpaRepository<TripMember, Long> {
     boolean existsByTripAndUser(Trip trip, User user);
     List<TripMember> findByTrip(Trip trip);
     List<TripMember> findByUserOrderByJoinedAtDesc(User user);
+    void deleteByUser(User user);
+    void deleteByTrip(Trip trip);
 }

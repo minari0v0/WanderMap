@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/trips")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // 임시 CORS 허용
 public class TripController {
 
     private final TripService tripService;

@@ -11,6 +11,9 @@ function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "signin"
+  const redirectParam = searchParams.get("redirect")
+  const redirectTo =
+    redirectParam && redirectParam.startsWith("/") ? redirectParam : "/"
 
   const [mode, setMode] = useState<"signin" | "signup">(initialMode)
   const [isLoading, setIsLoading] = useState(false)
@@ -29,7 +32,7 @@ function LoginContent() {
     try {
       const user = await authService.login(data)
       authService.setSession(user)
-      router.push("/")
+      router.push(redirectTo)
     } catch (err: any) {
       const msg = err.response?.data?.error || err.message || "로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요."
       setErrorMessage(msg)
@@ -48,7 +51,7 @@ function LoginContent() {
     try {
       const user = await authService.signup(data)
       authService.setSession(user)
-      router.push("/")
+      router.push(redirectTo)
     } catch (err: any) {
       const msg = err.response?.data?.error || err.message || "회원가입에 실패했습니다. 잠시 후 다시 시도해 주세요."
       setErrorMessage(msg)
@@ -76,7 +79,7 @@ function LoginContent() {
         provider: provider.toUpperCase(),
         createdAt: new Date().toISOString(),
       })
-      router.push("/")
+      router.push(redirectTo)
     }, 600)
   }
 
@@ -147,7 +150,7 @@ function LoginContent() {
                   <p>1. 회원은 타인의 정보를 도용하지 않으며, 서비스 내 투표 및 일정 조율 기능을 건전한 목적으로 사용해야 합니다.<br />2. 생성된 여행 방의 초대 링크는 방 개설자 및 초대된 멤버의 동의 하에 공유되어야 합니다.</p>
 
                   <p className="font-semibold text-[#18181B] mt-2">제 3 조 (서비스의 제공 및 변경)</p>
-                  <p>WanderMap은 실시간 투표, AI 기반 동선 추천 및 네이버 지도 연동 기능을 지속적으로 고도화하여 제공합니다.</p>
+                  <p>WanderMap은 실시간 투표, AI 기반 동선 추천, 구글 지도(Google Maps) 연동 및 여행 다이어리 기록 기능을 지속적으로 고도화하여 제공합니다.</p>
                 </>
               ) : (
                 <>

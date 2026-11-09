@@ -9,4 +9,6 @@ public interface PreferenceRepository extends JpaRepository<Preference, Long> {
     Optional<Preference> findByTripIdAndUserId(Long tripId, Long userId);
     List<Preference> findByTripId(Long tripId);
     boolean existsByTripIdAndUserId(Long tripId, Long userId);
+    void deleteByUserId(Long userId);
+    void deleteByTripId(Long tripId);
 }
