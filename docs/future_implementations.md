@@ -8,7 +8,7 @@
 ---
 
 ## 📊 1. 현재 진행 상황 및 완료된 작업
-* **인프라 & DB**: Docker Compose 로컬 환경(PostgreSQL 16 & Redis 7.2) 및 Neon Serverless PostgreSQL 스키마(`schema.sql`) 구축 완료.
+* **인프라 & DB**: Docker Compose 로컬 환경(PostgreSQL 16 & Redis 7.2) 및 Neon Serverless PostgreSQL 스키마(`schema.sql`) 구축 완료, Upstash Redis 연동 사양([redis_architecture_and_use_cases.md](/docs/redis_architecture_and_use_cases.md)) 수립 완료.
 * **백엔드**:
   - 회원 및 인증 도메인(`User`, `UserSocialAccount`, `EmailVerification`, `AuthService`) 구현 완료 (일반 이메일 회원가입/로그인, 6자리 이메일 인증, 프로필/비밀번호 변경, 소셜 계정 연동, 회원 탈퇴 및 연관 데이터 일괄 정리).
   - 여행 방(`Trip`, `TripMember`) 생성/초대코드 조회/참여 및 선호도 설문(`Preference`) 등록/조회 REST API 구현 완료.
