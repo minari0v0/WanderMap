@@ -18,9 +18,6 @@ const notoSansKr = Noto_Sans_KR({
 
 export const metadata: Metadata = {
   title: 'WanderMap — 여행 동선 플래너 & 여행 다이어리',
-  description:
-    '그룹 취향 투표부터 구글 지도(Google Maps) 기반 최적 동선 설계, 마크다운 메모와 사진·별점 기록까지 하나로 이어지는 올인원 여행 플래너 & 다이어리.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
