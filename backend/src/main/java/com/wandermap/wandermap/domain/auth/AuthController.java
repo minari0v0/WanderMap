@@ -34,9 +34,13 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMe(@RequestParam Long userId) {
+    public ResponseEntity<?> getMe(
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
+    ) {
         try {
-            UserResponse response = authService.getMe(userId);
+            Long resolvedUserId = userId != null ? userId : headerUserId;
+            UserResponse response = authService.getMe(resolvedUserId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));
@@ -57,14 +61,18 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> updateProfile(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
+    ) {
         try {
-            Long userId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
+            Long bodyUserId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
+            Long resolvedUserId = bodyUserId != null ? bodyUserId : headerUserId;
             String nickname = body.get("nickname") != null ? String.valueOf(body.get("nickname")) : null;
             String profileImage = body.get("profileImage") != null ? String.valueOf(body.get("profileImage")) : null;
             String bio = body.get("bio") != null ? String.valueOf(body.get("bio")) : null;
 
-            UserResponse response = authService.updateProfile(userId, nickname, profileImage, bio);
+            UserResponse response = authService.updateProfile(resolvedUserId, nickname, profileImage, bio);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));
@@ -72,14 +80,18 @@ public class AuthController {
     }
 
     @PostMapping("/password")
-    public ResponseEntity<?> changePassword(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> changePassword(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
+    ) {
         try {
-            Long userId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
+            Long bodyUserId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
+            Long resolvedUserId = bodyUserId != null ? bodyUserId : headerUserId;
             String currentPassword = body.get("currentPassword") != null ? String.valueOf(body.get("currentPassword")) : null;
             String newPassword = body.get("newPassword") != null ? String.valueOf(body.get("newPassword")) : null;
             String newPasswordConfirm = body.get("newPasswordConfirm") != null ? String.valueOf(body.get("newPasswordConfirm")) : null;
 
-            authService.changePassword(userId, currentPassword, newPassword, newPasswordConfirm);
+            authService.changePassword(resolvedUserId, currentPassword, newPassword, newPasswordConfirm);
             return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));

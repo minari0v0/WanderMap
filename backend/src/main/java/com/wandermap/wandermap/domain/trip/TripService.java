@@ -20,8 +20,7 @@ public class TripService {
 
     @Transactional
     public TripResponse createTrip(TripCreateRequest request) {
-        // 임시 로그인 유저 조회 (없을 경우 테스트용 Mock User 자동 생성)
-        User user = getOrCreateMockUser(request.getUserId());
+        User user = requireAuthenticatedUser(request.getUserId());
 
         Trip trip = Trip.builder()
                 .title(request.getTitle())
@@ -41,15 +40,15 @@ public class TripService {
                 .build();
         tripMemberRepository.save(ownerMember);
 
-        return TripResponse.from(savedTrip);
+        return TripResponse.from(savedTrip, List.of(ownerMember));
     }
 
     @Transactional
     public TripResponse joinTrip(String inviteCode, Long userId) {
+        User user = requireAuthenticatedUser(userId);
+
         Trip trip = tripRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 초대 코드입니다: " + inviteCode));
-
-        User user = getOrCreateMockUser(userId);
 
         // 중복 참여 체크
         if (!tripMemberRepository.existsByTripAndUser(trip, user)) {
@@ -61,52 +60,38 @@ public class TripService {
             tripMemberRepository.save(newMember);
         }
 
-        return TripResponse.from(trip);
+        return TripResponse.from(trip, tripMemberRepository.findByTrip(trip));
     }
 
     public TripResponse getTrip(Long id) {
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행 방입니다. ID: " + id));
-        return TripResponse.from(trip);
+        return TripResponse.from(trip, tripMemberRepository.findByTrip(trip));
     }
 
     public TripResponse getTripByInviteCode(String inviteCode) {
         Trip trip = tripRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 초대 코드입니다: " + inviteCode));
-        return TripResponse.from(trip);
+        return TripResponse.from(trip, tripMemberRepository.findByTrip(trip));
     }
 
     public List<TripResponse> getMyTrips(Long userId) {
         if (userId == null) {
-            return java.util.Collections.emptyList();
+            throw new IllegalArgumentException("로그인이 필요한 기능입니다.");
         }
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null) {
-            return java.util.Collections.emptyList();
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("로그인이 필요한 기능입니다."));
         return tripMemberRepository.findByUserOrderByJoinedAtDesc(user)
                 .stream()
-                .map(tm -> TripResponse.from(tm.getTrip()))
+                .map(tm -> TripResponse.from(tm.getTrip(), tripMemberRepository.findByTrip(tm.getTrip())))
                 .toList();
     }
 
-    private User getOrCreateMockUser(Long userId) {
-        if (userId != null) {
-            return userRepository.findById(userId)
-                    .orElseGet(() -> createDefaultMockUser(userId));
+    private User requireAuthenticatedUser(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("로그인이 필요한 기능입니다.");
         }
-        return userRepository.findByEmail("test@wandermap.io")
-                .orElseGet(() -> createDefaultMockUser(null));
-    }
-
-    private User createDefaultMockUser(Long preferredId) {
-        User user = User.builder()
-                .email("test@wandermap.io")
-                .nickname("테스터")
-                .profileImage("")
-                .provider("LOCAL")
-                .oauthId("mock-oauth-id")
-                .build();
-        return userRepository.save(user);
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("로그인이 필요한 기능입니다."));
     }
 }

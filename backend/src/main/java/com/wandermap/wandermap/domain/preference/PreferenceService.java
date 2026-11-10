@@ -22,10 +22,10 @@ public class PreferenceService {
 
     @Transactional
     public PreferenceResponse submitPreference(Long tripId, PreferenceSubmitRequest request) {
+        User user = requireAuthenticatedUser(request.getUserId());
+
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행 방입니다. ID: " + tripId));
-
-        User user = getOrCreateUser(request.getUserId());
 
         Preference preference = preferenceRepository.findByTripIdAndUserId(tripId, user.getId())
                 .map(existing -> {
@@ -51,7 +51,7 @@ public class PreferenceService {
     }
 
     public PreferenceResponse getMyPreference(Long tripId, Long userId) {
-        User user = getOrCreateUser(userId);
+        User user = requireAuthenticatedUser(userId);
         return preferenceRepository.findByTripIdAndUserId(tripId, user.getId())
                 .map(PreferenceResponse::from)
                 .orElse(null);
@@ -63,24 +63,11 @@ public class PreferenceService {
                 .collect(Collectors.toList());
     }
 
-    private User getOrCreateUser(Long userId) {
-        if (userId != null) {
-            return userRepository.findById(userId)
-                    .orElseGet(() -> userRepository.findByEmail("test@wandermap.io")
-                            .orElseGet(this::createDefaultUser));
+    private User requireAuthenticatedUser(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("로그인이 필요한 기능입니다.");
         }
-        return userRepository.findByEmail("test@wandermap.io")
-                .orElseGet(this::createDefaultUser);
-    }
-
-    private User createDefaultUser() {
-        User user = User.builder()
-                .email("test@wandermap.io")
-                .nickname("Tester")
-                .profileImage("")
-                .provider("LOCAL")
-                .oauthId("mock-oauth-id")
-                .build();
-        return userRepository.save(user);
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("로그인이 필요한 기능입니다."));
     }
 }

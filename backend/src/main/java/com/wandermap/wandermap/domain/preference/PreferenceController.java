@@ -16,7 +16,11 @@ public class PreferenceController {
     @PostMapping
     public ResponseEntity<PreferenceResponse> submitPreference(
             @PathVariable Long tripId,
-            @RequestBody PreferenceSubmitRequest request) {
+            @RequestBody PreferenceSubmitRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        if (request.getUserId() == null && headerUserId != null) {
+            request.setUserId(headerUserId);
+        }
         PreferenceResponse response = preferenceService.submitPreference(tripId, request);
         return ResponseEntity.ok(response);
     }
@@ -24,8 +28,10 @@ public class PreferenceController {
     @GetMapping("/me")
     public ResponseEntity<PreferenceResponse> getMyPreference(
             @PathVariable Long tripId,
-            @RequestParam(required = false) Long userId) {
-        PreferenceResponse response = preferenceService.getMyPreference(tripId, userId);
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        Long resolvedUserId = userId != null ? userId : headerUserId;
+        PreferenceResponse response = preferenceService.getMyPreference(tripId, resolvedUserId);
         return ResponseEntity.ok(response);
     }
 

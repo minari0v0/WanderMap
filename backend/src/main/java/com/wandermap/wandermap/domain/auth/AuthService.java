@@ -1,5 +1,10 @@
 package com.wandermap.wandermap.domain.auth;
 
+import com.wandermap.wandermap.domain.itinerary.ItineraryDay;
+import com.wandermap.wandermap.domain.itinerary.ItineraryDayRepository;
+import com.wandermap.wandermap.domain.itinerary.ItineraryPlace;
+import com.wandermap.wandermap.domain.itinerary.ItineraryPlaceRepository;
+import com.wandermap.wandermap.domain.itinerary.PlaceVoteRepository;
 import com.wandermap.wandermap.domain.preference.PreferenceRepository;
 import com.wandermap.wandermap.domain.trip.Trip;
 import com.wandermap.wandermap.domain.trip.TripMemberRepository;
@@ -27,6 +32,9 @@ public class AuthService {
     private final TripRepository tripRepository;
     private final TripMemberRepository tripMemberRepository;
     private final PreferenceRepository preferenceRepository;
+    private final ItineraryDayRepository itineraryDayRepository;
+    private final ItineraryPlaceRepository itineraryPlaceRepository;
+    private final PlaceVoteRepository placeVoteRepository;
     private final PasswordEncoder passwordEncoder;
 
     private static final java.util.regex.Pattern PASSWORD_PATTERN =
@@ -285,13 +293,25 @@ public class AuthService {
     public void withdraw(Long userId) {
         User user = getUser(userId);
 
-        // 1. 유저가 제출한 선호도 설문 및 참여한 여정 멤버십 정리
+        // 1. 유저가 제출한 투표, 선호도 설문 및 참여한 여정 멤버십 정리
+        placeVoteRepository.deleteByUserId(userId);
         preferenceRepository.deleteByUserId(userId);
         tripMemberRepository.deleteByUser(user);
 
         // 2. 유저가 생성한 여정 방 및 해당 방의 하위 데이터 정리
         List<Trip> createdTrips = tripRepository.findByCreatedBy(user);
         for (Trip trip : createdTrips) {
+            List<ItineraryDay> days = itineraryDayRepository.findByTripIdOrderByDayNumberAsc(trip.getId());
+            if (!days.isEmpty()) {
+                List<Long> dayIds = days.stream().map(ItineraryDay::getId).toList();
+                List<ItineraryPlace> places = itineraryPlaceRepository.findByDayIdInOrderByVisitOrderAsc(dayIds);
+                if (!places.isEmpty()) {
+                    List<Long> placeIds = places.stream().map(ItineraryPlace::getId).toList();
+                    placeVoteRepository.deleteByItineraryPlaceIdIn(placeIds);
+                    itineraryPlaceRepository.deleteAll(places);
+                }
+                itineraryDayRepository.deleteAll(days);
+            }
             preferenceRepository.deleteByTripId(trip.getId());
             tripMemberRepository.deleteByTrip(trip);
             tripRepository.delete(trip);

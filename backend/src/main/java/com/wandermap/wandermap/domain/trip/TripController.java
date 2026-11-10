@@ -12,7 +12,12 @@ public class TripController {
     private final TripService tripService;
 
     @PostMapping
-    public ResponseEntity<TripResponse> createTrip(@RequestBody TripCreateRequest request) {
+    public ResponseEntity<TripResponse> createTrip(
+            @RequestBody TripCreateRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        if (request.getUserId() == null && headerUserId != null) {
+            request.setUserId(headerUserId);
+        }
         TripResponse response = tripService.createTrip(request);
         return ResponseEntity.ok(response);
     }
@@ -20,15 +25,19 @@ public class TripController {
     @PostMapping("/join/{inviteCode}")
     public ResponseEntity<TripResponse> joinTrip(
             @PathVariable String inviteCode,
-            @RequestParam(required = false) Long userId) {
-        TripResponse response = tripService.joinTrip(inviteCode, userId);
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        Long resolvedUserId = userId != null ? userId : headerUserId;
+        TripResponse response = tripService.joinTrip(inviteCode, resolvedUserId);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<TripResponse> getTrip(@PathVariable Long id) {
-        TripResponse response = tripService.getTrip(id);
-        return ResponseEntity.ok(response);
+    @GetMapping("/{idOrCode}")
+    public ResponseEntity<TripResponse> getTrip(@PathVariable String idOrCode) {
+        if (idOrCode != null && idOrCode.matches("^\\d+$")) {
+            return ResponseEntity.ok(tripService.getTrip(Long.parseLong(idOrCode)));
+        }
+        return ResponseEntity.ok(tripService.getTripByInviteCode(idOrCode));
     }
 
     @GetMapping("/invite/{inviteCode}")
@@ -38,8 +47,11 @@ public class TripController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<java.util.List<TripResponse>> getMyTrips(@RequestParam Long userId) {
-        java.util.List<TripResponse> response = tripService.getMyTrips(userId);
+    public ResponseEntity<java.util.List<TripResponse>> getMyTrips(
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        Long resolvedUserId = userId != null ? userId : headerUserId;
+        java.util.List<TripResponse> response = tripService.getMyTrips(resolvedUserId);
         return ResponseEntity.ok(response);
     }
 }
