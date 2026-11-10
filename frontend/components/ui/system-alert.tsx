@@ -169,14 +169,14 @@ export function SystemAlertProvider({ children }: { children: React.ReactNode })
     <>
       {children}
 
-      {/* 1. 화면 중앙 최상단 슬라이드 토스트 컨테이너 (내려올 때 페이드 인 + 올라갈 때 페이드 아웃) */}
-      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none flex flex-col items-center">
+      {/* 1. 화면 정중앙 상단 슬라이드 토스트 컨테이너 */}
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none flex flex-col items-center gap-2">
         {toasts.map((toast) => {
           const typeIcon = {
-            info: <Compass className="size-4 text-[#1A9E7A] shrink-0" />,
-            success: <CheckCircle2 className="size-4 text-[#1A9E7A] shrink-0" />,
-            warning: <AlertTriangle className="size-4 text-amber-500 shrink-0" />,
-            error: <AlertCircle className="size-4 text-rose-500 shrink-0" />,
+            info: <Compass className="size-4.5 text-[#1A9E7A] shrink-0" />,
+            success: <CheckCircle2 className="size-4.5 text-[#1A9E7A] shrink-0" />,
+            warning: <AlertTriangle className="size-4.5 text-amber-500 shrink-0" />,
+            error: <AlertCircle className="size-4.5 text-rose-500 shrink-0" />,
           }[toast.type || "info"]
 
           const isVisible = toast.stage === "visible"
@@ -184,21 +184,21 @@ export function SystemAlertProvider({ children }: { children: React.ReactNode })
           return (
             <div
               key={toast.id}
-              className={`pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E2E2DA] shadow-xl shadow-black/10 text-xs font-bold text-[#18181B] select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+              className={`pointer-events-auto flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#E2E2DA] shadow-xl shadow-black/10 text-sm font-extrabold text-[#18181B] select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
                 isVisible
                   ? "translate-y-0 opacity-100 scale-100"
                   : "-translate-y-8 opacity-0 scale-95"
               }`}
             >
               {typeIcon}
-              <span className="truncate max-w-[340px] sm:max-w-md">{toast.message}</span>
+              <span className="truncate max-w-[360px] sm:max-w-lg">{toast.message}</span>
               <button
                 type="button"
                 onClick={() => dismissToast(toast.id)}
                 className="ml-1 text-[#8A8A93] hover:text-[#18181B] p-0.5 rounded-md hover:bg-slate-100 transition cursor-pointer"
                 aria-label="닫기"
               >
-                <X className="size-3.5" />
+                <X className="size-4" />
               </button>
             </div>
           )

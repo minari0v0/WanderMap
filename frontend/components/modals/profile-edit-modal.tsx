@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth-service"
 import { UserAvatar } from "@/components/ui/user-avatar"
 import { showToast } from "@/components/ui/system-alert"
+import { uploadImageToCloudinary } from "@/lib/cloudinary"
 
 export interface ProfileEditModalProps {
   isOpen: boolean
@@ -276,12 +277,16 @@ export function ProfileEditModal({
     }
 
     let finalProfileImage = editProfileImg
-    if (activeTab === "custom" && imageObj && canvasRef.current) {
-      finalProfileImage = canvasRef.current.toDataURL("image/jpeg", 0.85)
-    }
-
     setIsSaving(true)
     try {
+      if (activeTab === "custom" && imageObj && canvasRef.current) {
+        const croppedDataUrl = canvasRef.current.toDataURL("image/webp", 0.88)
+        finalProfileImage = await uploadImageToCloudinary(croppedDataUrl, {
+          maxDimension: 480,
+          quality: 0.88,
+        })
+      }
+
       const updated = await authService.updateProfile({
         userId: user.id,
         nickname: trimmedNickname,

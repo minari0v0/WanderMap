@@ -187,12 +187,35 @@ export function DateRangePicker({
         </div>
       </div>
 
-      {/* 선택 상태 안내 */}
-      <div className="py-2.5 text-center text-xs font-bold text-[#6B6B72]">
+      {/* 선택 상태 안내 (도착일 선택 전 마우스 호버 시 몇박 며칠 실시간 미리보기 표시) */}
+      <div className="py-2.5 text-center text-xs font-bold text-[#6B6B72] min-h-[36px] flex items-center justify-center">
         {!tempStart ? (
-          "출발일을 선택해 주세요"
+          <span>출발일을 선택해 주세요</span>
         ) : !tempEnd ? (
-          <span className="text-[#1A9E7A]">도착일을 선택해 주세요</span>
+          (() => {
+            let hoverDurationLabel: string | null = null
+            if (hoverDate) {
+              const s = new Date(tempStart)
+              const h = new Date(hoverDate)
+              if (!isNaN(s.getTime()) && !isNaN(h.getTime())) {
+                const nights = Math.max(
+                  0,
+                  Math.round(Math.abs(h.getTime() - s.getTime()) / (1000 * 60 * 60 * 24))
+                )
+                hoverDurationLabel = nights === 0 ? "당일치기" : `${nights}박 ${nights + 1}일`
+              }
+            }
+            return (
+              <span className="inline-flex items-center gap-2">
+                <span className="text-[#1A9E7A] font-extrabold">도착일을 선택해 주세요</span>
+                {hoverDurationLabel && (
+                  <span className="px-2 py-0.5 rounded-full bg-[#EDFAF4] border border-[#1A9E7A]/40 text-[#1A9E7A] text-[11px] font-extrabold">
+                    {hoverDurationLabel}
+                  </span>
+                )}
+              </span>
+            )
+          })()
         ) : (
           (() => {
             const s = new Date(tempStart)
@@ -229,7 +252,10 @@ export function DateRangePicker({
       </div>
 
       {/* 달력 날짜 그리드 */}
-      <div className="grid grid-cols-7 gap-y-1 text-center text-sm">
+      <div
+        className="grid grid-cols-7 gap-y-1 text-center text-sm"
+        onMouseLeave={() => setHoverDate(null)}
+      >
         {Array.from({ length: firstDayOfWeek }).map((_, i) => (
           <div key={`empty-${i}`} className="h-9" />
         ))}
@@ -240,6 +266,7 @@ export function DateRangePicker({
 
           const isStart = tempStart === dateStr
           const isEnd = tempEnd === dateStr
+          const isHoverTarget = Boolean(tempStart && !tempEnd && hoverDate === dateStr)
           const isBetween =
             tempStart && tempEnd && dateStr > tempStart && dateStr < tempEnd
           const isHoverBetween =
@@ -258,17 +285,26 @@ export function DateRangePicker({
               onClick={() => handleDateClick(dateStr)}
               className={`relative h-9 flex items-center justify-center cursor-pointer transition-colors ${
                 isBetween || isHoverBetween ? "bg-[#EDFAF4]" : ""
-              } ${isStart && tempEnd ? "rounded-l-full" : ""} ${
-                isEnd && tempStart ? "rounded-r-full" : ""
+              } ${
+                isStart && (tempEnd || (hoverDate && hoverDate > tempStart))
+                  ? "rounded-l-full"
+                  : ""
+              } ${
+                (isEnd && tempStart) ||
+                (isHoverTarget && tempStart && hoverDate && hoverDate > tempStart)
+                  ? "rounded-r-full"
+                  : ""
               }`}
             >
               <span
                 className={`flex size-8.5 items-center justify-center rounded-full text-xs sm:text-sm font-bold transition ${
                   isSelectedEndpoint
                     ? "bg-[#1A9E7A] text-white shadow-sm font-extrabold scale-105"
-                    : isBetween || isHoverBetween
-                      ? "text-[#1A9E7A] font-extrabold"
-                      : "hover:bg-slate-100 text-[#27272A]"
+                    : isHoverTarget
+                      ? "bg-[#EDFAF4] text-[#1A9E7A] ring-2 ring-[#1A9E7A] font-extrabold"
+                      : isBetween || isHoverBetween
+                        ? "text-[#1A9E7A] font-extrabold"
+                        : "hover:bg-slate-100 text-[#27272A]"
                 }`}
               >
                 {day}
