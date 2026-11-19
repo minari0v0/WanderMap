@@ -116,6 +116,78 @@ export interface UpdatePlaceDiaryPayload {
   photos?: string[]
 }
 
+export interface ExpenseItem {
+  id: number
+  dayNumber: number
+  title: string
+  amount: number
+  currency?: string
+  payerType: "UNSPECIFIED" | "SHARED" | "MEMBER" | string
+  payerUserId: number | null
+  payerLabel: string
+  createdById: number | null
+  createdAt: string
+}
+
+export interface MemberExpenseTotal {
+  userId: number | null
+  label: string
+  amount: number
+  totalsByCurrency?: Record<string, number>
+}
+
+export interface DayExpenseSummary {
+  dayNumber: number
+  totalAmount: number
+  sharedAmount: number
+  unspecifiedAmount: number
+  totalsByCurrency?: Record<string, number>
+  sharedTotalsByCurrency?: Record<string, number>
+  memberTotals: MemberExpenseTotal[]
+  items: ExpenseItem[]
+}
+
+export interface TripExpenseSummaryResponse {
+  tripId: number
+  tripTotalAmount: number
+  tripTotalsByCurrency?: Record<string, number>
+  days: DayExpenseSummary[]
+}
+
+export interface CreateExpensePayload {
+  dayNumber: number
+  title: string
+  amount: number
+  currency?: string
+  payerType?: "UNSPECIFIED" | "SHARED" | "MEMBER"
+  payerUserId?: number
+  payerName?: string
+}
+
+export interface PresenceViewer {
+  viewerKey: string
+  guest: boolean
+  userId: number | null
+  nickname: string
+  profileImage?: string | null
+  role: "OWNER" | "MEMBER" | "GUEST" | string
+}
+
+export interface TripPresenceResponse {
+  tripId: number
+  totalOnlineCount: number
+  guestCount: number
+  viewers: PresenceViewer[]
+}
+
+export interface PlaceVoteResponse {
+  itineraryPlaceId: number
+  votesUp: number
+  votesDown: number
+  myVote: "UP" | "DOWN" | null
+  status: "VOTING" | "CONFIRMED" | string
+}
+
 export const tripService = {
   createTrip: async (data: TripCreateRequest): Promise<TripResponse> => {
     const response = await apiClient.post<TripResponse>("/api/trips", data)
@@ -251,11 +323,83 @@ export const tripService = {
     itineraryPlaceId: number,
     userId: number,
     voteType: "UP" | "DOWN"
-  ): Promise<TripItineraryResponse> => {
-    const response = await apiClient.post<TripItineraryResponse>(
+  ): Promise<PlaceVoteResponse> => {
+    const response = await apiClient.post<PlaceVoteResponse>(
       `/api/trips/${tripId}/itinerary/places/${itineraryPlaceId}/vote`,
       { userId, voteType }
     )
     return response.data
+  },
+
+  // =========================================================================
+  // 일자별 지출 요약 (Day Expenses) API
+  // =========================================================================
+  getExpenses: async (tripId: number): Promise<TripExpenseSummaryResponse> => {
+    const response = await apiClient.get<TripExpenseSummaryResponse>(
+      `/api/trips/${tripId}/expenses`
+    )
+    return response.data
+  },
+
+  addExpense: async (
+    tripId: number,
+    payload: CreateExpensePayload
+  ): Promise<TripExpenseSummaryResponse> => {
+    const response = await apiClient.post<TripExpenseSummaryResponse>(
+      `/api/trips/${tripId}/expenses`,
+      payload
+    )
+    return response.data
+  },
+
+  deleteExpense: async (
+    tripId: number,
+    expenseId: number
+  ): Promise<TripExpenseSummaryResponse> => {
+    const response = await apiClient.delete<TripExpenseSummaryResponse>(
+      `/api/trips/${tripId}/expenses/${expenseId}`
+    )
+    return response.data
+  },
+
+  // =========================================================================
+  // 실시간 접속자 (Trip Presence) API
+  // =========================================================================
+  getPresence: async (tripId: number): Promise<TripPresenceResponse> => {
+    const response = await apiClient.get<TripPresenceResponse>(
+      `/api/trips/${tripId}/presence`
+    )
+    return response.data
+  },
+
+  sendPresenceHeartbeat: async (
+    tripId: number,
+    sessionId?: string
+  ): Promise<TripPresenceResponse> => {
+    const response = await apiClient.post<TripPresenceResponse>(
+      `/api/trips/${tripId}/presence/heartbeat`,
+      { sessionId }
+    )
+    return response.data
+  },
+
+  leavePresence: (
+    tripId: number,
+    sessionId?: string,
+    overrideAccessToken?: string | null
+  ): void => {
+    if (typeof window === "undefined") return
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+    const token = overrideAccessToken ?? localStorage.getItem("accessToken")
+    fetch(`${apiBase}/api/trips/${tripId}/presence/leave`, {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ sessionId }),
+    }).catch(() => {})
   },
 }

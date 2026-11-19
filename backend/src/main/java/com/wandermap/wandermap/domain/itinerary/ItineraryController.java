@@ -1,5 +1,6 @@
 package com.wandermap.wandermap.domain.itinerary;
 
+import com.wandermap.wandermap.global.security.SecurityUtils;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,12 +18,9 @@ public class ItineraryController {
 
     @GetMapping
     public ResponseEntity<TripItineraryResponse> getItinerary(
-            @PathVariable Long tripId,
-            @RequestParam(required = false) Long userId,
-            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
+            @PathVariable Long tripId
     ) {
-        Long resolvedUserId = userId != null ? userId : headerUserId;
-        return ResponseEntity.ok(itineraryService.getTripItinerary(tripId, resolvedUserId));
+        return ResponseEntity.ok(itineraryService.getTripItinerary(tripId, SecurityUtils.getCurrentUserId()));
     }
 
     @PutMapping("/days/{dayNumber}/memo")
@@ -33,8 +31,9 @@ public class ItineraryController {
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
         String memo = body.get("memo") != null ? String.valueOf(body.get("memo")) : "";
+        Long authUserId = SecurityUtils.getCurrentUserId();
         Long bodyUserId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
-        Long resolvedUserId = bodyUserId != null ? bodyUserId : headerUserId;
+        Long resolvedUserId = authUserId != null ? authUserId : (bodyUserId != null ? bodyUserId : headerUserId);
         return ResponseEntity.ok(itineraryService.updateDayMemo(tripId, dayNumber, memo, resolvedUserId));
     }
 
@@ -44,9 +43,9 @@ public class ItineraryController {
             @RequestBody AddPlaceRequest request,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
-        if (request.getUserId() == null && headerUserId != null) {
-            request.setUserId(headerUserId);
-        }
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (request.getUserId() != null ? request.getUserId() : headerUserId);
+        request.setUserId(resolvedUserId);
         return ResponseEntity.ok(itineraryService.addPlace(tripId, request));
     }
 
@@ -56,7 +55,8 @@ public class ItineraryController {
             @RequestBody BatchAddPlacePayload payload,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
-        Long resolvedUserId = payload.getUserId() != null ? payload.getUserId() : headerUserId;
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (payload.getUserId() != null ? payload.getUserId() : headerUserId);
         return ResponseEntity.ok(
                 itineraryService.addPlacesBatch(
                         tripId,
@@ -75,7 +75,8 @@ public class ItineraryController {
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId,
             @RequestBody UpdatePlaceDiaryRequest request
     ) {
-        Long resolvedUserId = userId != null ? userId : headerUserId;
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (userId != null ? userId : headerUserId);
         return ResponseEntity.ok(itineraryService.updatePlaceDiary(tripId, itineraryPlaceId, request, resolvedUserId));
     }
 
@@ -86,7 +87,8 @@ public class ItineraryController {
             @RequestParam(required = false) Long userId,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
-        Long resolvedUserId = userId != null ? userId : headerUserId;
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (userId != null ? userId : headerUserId);
         return ResponseEntity.ok(itineraryService.deletePlace(tripId, itineraryPlaceId, resolvedUserId));
     }
 
@@ -97,23 +99,25 @@ public class ItineraryController {
             @RequestBody ReorderPayload payload,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
-        Long resolvedUserId = payload.getUserId() != null ? payload.getUserId() : headerUserId;
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (payload.getUserId() != null ? payload.getUserId() : headerUserId);
         return ResponseEntity.ok(
                 itineraryService.reorderDayPlaces(tripId, dayNumber, payload.getPlaceIds(), resolvedUserId)
         );
     }
 
     @PostMapping("/places/{itineraryPlaceId}/vote")
-    public ResponseEntity<TripItineraryResponse> votePlace(
+    public ResponseEntity<PlaceVoteResponse> votePlace(
             @PathVariable Long tripId,
             @PathVariable Long itineraryPlaceId,
             @RequestBody Map<String, Object> body,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
+        Long authUserId = SecurityUtils.getCurrentUserId();
         Long bodyUserId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
-        Long resolvedUserId = bodyUserId != null ? bodyUserId : headerUserId;
+        Long resolvedUserId = authUserId != null ? authUserId : (bodyUserId != null ? bodyUserId : headerUserId);
         String voteType = body.get("voteType") != null ? String.valueOf(body.get("voteType")) : "UP";
-        return ResponseEntity.ok(itineraryService.votePlace(tripId, itineraryPlaceId, resolvedUserId, voteType));
+        return ResponseEntity.ok(itineraryService.votePlaceFast(tripId, itineraryPlaceId, resolvedUserId, voteType));
     }
 
     @Data

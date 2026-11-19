@@ -7,6 +7,7 @@ import com.wandermap.wandermap.domain.trip.TripMemberRepository;
 import com.wandermap.wandermap.domain.trip.TripRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -29,6 +30,8 @@ public class ItineraryService {
     private final ItineraryDayRepository itineraryDayRepository;
     private final ItineraryPlaceRepository itineraryPlaceRepository;
     private final PlaceVoteRepository placeVoteRepository;
+    private final PlaceVoteStore placeVoteStore;
+    private final PlaceVoteAsyncPersister placeVoteAsyncPersister;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -155,6 +158,7 @@ public class ItineraryService {
                 .build();
         placeVoteRepository.save(initialVote);
         recalculatePlaceStatus(trip, saved);
+        placeVoteStore.warmVotes(saved.getId(), Map.of(user.getId(), "UP"));
 
         return buildItineraryResponse(trip, days, user.getId());
     }
@@ -171,6 +175,7 @@ public class ItineraryService {
             if (!oldPlaces.isEmpty()) {
                 List<Long> oldPlaceIds = oldPlaces.stream().map(ItineraryPlace::getId).toList();
                 placeVoteRepository.deleteByItineraryPlaceIdIn(oldPlaceIds);
+                placeVoteStore.evictPlaces(oldPlaceIds);
                 itineraryPlaceRepository.deleteAll(oldPlaces);
             }
         }
@@ -232,6 +237,7 @@ public class ItineraryService {
 
         Long dayId = item.getDay().getId();
         placeVoteRepository.deleteByItineraryPlaceId(itineraryPlaceId);
+        placeVoteStore.evictPlace(itineraryPlaceId);
         itineraryPlaceRepository.delete(item);
 
         // 남은 장소를 방문 예정 시간 오름차순으로 재정렬 (1, 2, 3...)
@@ -269,6 +275,52 @@ public class ItineraryService {
         }
 
         return buildItineraryResponse(trip, days, userId);
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public PlaceVoteResponse votePlaceFast(Long tripId, Long itineraryPlaceId, Long userId, String voteType) {
+        if (userId == null) {
+            throw new IllegalArgumentException("로그인이 필요한 기능입니다.");
+        }
+        String normalizedVote = "DOWN".equalsIgnoreCase(voteType) ? "DOWN" : "UP";
+
+        if (placeVoteStore.getVotesIfInitialized(itineraryPlaceId) == null) {
+            if (!itineraryPlaceRepository.existsById(itineraryPlaceId)) {
+                throw new IllegalArgumentException("존재하지 않는 일정 장소입니다.");
+            }
+            List<PlaceVote> existingVotes = placeVoteRepository.findByItineraryPlaceId(itineraryPlaceId);
+            Map<Long, String> initialMap = new LinkedHashMap<>();
+            for (PlaceVote pv : existingVotes) {
+                if (pv.getUser() != null && pv.getUser().getId() != null && pv.getVoteType() != null) {
+                    initialMap.put(pv.getUser().getId(), pv.getVoteType().toUpperCase());
+                }
+            }
+            placeVoteStore.warmVotes(itineraryPlaceId, initialMap);
+        }
+
+        PlaceVoteStore.VoteToggleResult result = placeVoteStore.toggleVote(itineraryPlaceId, userId, normalizedVote);
+
+        Integer cachedMemberCount = placeVoteStore.getCachedMemberCount(tripId);
+        int memberCount;
+        if (cachedMemberCount != null) {
+            memberCount = Math.max(1, cachedMemberCount);
+        } else {
+            memberCount = (int) Math.max(1L, tripMemberRepository.countByTripId(tripId));
+            placeVoteStore.cacheMemberCount(tripId, memberCount);
+        }
+
+        int requiredVotes = memberCount <= 1 ? 1 : (int) Math.ceil(memberCount * (2.0 / 3.0));
+        String status = result.votesUp() >= requiredVotes ? "CONFIRMED" : "VOTING";
+
+        placeVoteAsyncPersister.syncVoteToDatabase(itineraryPlaceId, userId, requiredVotes, status);
+
+        return new PlaceVoteResponse(
+                itineraryPlaceId,
+                result.votesUp(),
+                result.votesDown(),
+                result.myVote(),
+                status
+        );
     }
 
     @Transactional
@@ -337,7 +389,7 @@ public class ItineraryService {
 
         ItineraryPlace saved = itineraryPlaceRepository.save(itineraryPlace);
         if (req.getUserId() != null) {
-            userRepository.findById(req.getUserId()).ifPresent(user -> {
+            userRepository.findById(req.getUserId()).ifPresentOrElse(user -> {
                 PlaceVote initialVote = PlaceVote.builder()
                         .itineraryPlace(saved)
                         .user(user)
@@ -345,7 +397,10 @@ public class ItineraryService {
                         .build();
                 placeVoteRepository.save(initialVote);
                 recalculatePlaceStatus(trip, saved);
-            });
+                placeVoteStore.warmVotes(saved.getId(), Map.of(user.getId(), "UP"));
+            }, () -> placeVoteStore.warmVotes(saved.getId(), Collections.emptyMap()));
+        } else {
+            placeVoteStore.warmVotes(saved.getId(), Collections.emptyMap());
         }
     }
 
@@ -395,12 +450,32 @@ public class ItineraryService {
                 : itineraryPlaceRepository.findByDayIdInOrderByVisitOrderAsc(dayIds);
 
         List<Long> itineraryPlaceIds = allPlaces.stream().map(ItineraryPlace::getId).toList();
-        List<PlaceVote> allVotes = itineraryPlaceIds.isEmpty()
-                ? Collections.emptyList()
-                : placeVoteRepository.findByItineraryPlaceIdIn(itineraryPlaceIds);
+        Map<Long, Map<Long, String>> votesByPlaceId = new LinkedHashMap<>(
+                placeVoteStore.getVotesBatchIfInitialized(itineraryPlaceIds)
+        );
+        List<Long> missingPlaceIds = itineraryPlaceIds.stream()
+                .filter(id -> !votesByPlaceId.containsKey(id))
+                .toList();
 
-        Map<Long, List<PlaceVote>> votesByPlaceId = allVotes.stream()
-                .collect(Collectors.groupingBy(v -> v.getItineraryPlace().getId()));
+        if (!missingPlaceIds.isEmpty()) {
+            List<PlaceVote> dbVotes = placeVoteRepository.findByItineraryPlaceIdIn(missingPlaceIds);
+            Map<Long, Map<Long, String>> toWarm = new LinkedHashMap<>();
+            for (Long missingId : missingPlaceIds) {
+                toWarm.put(missingId, new LinkedHashMap<>());
+            }
+            for (PlaceVote v : dbVotes) {
+                if (v.getItineraryPlace() != null && v.getUser() != null && v.getUser().getId() != null) {
+                    toWarm.computeIfAbsent(v.getItineraryPlace().getId(), k -> new LinkedHashMap<>())
+                            .put(v.getUser().getId(), v.getVoteType() != null ? v.getVoteType().toUpperCase() : "UP");
+                }
+            }
+            placeVoteStore.warmVotesBatch(toWarm);
+            votesByPlaceId.putAll(toWarm);
+        }
+
+        int memberCount = (int) Math.max(1L, tripMemberRepository.countByTripId(trip.getId()));
+        placeVoteStore.cacheMemberCount(trip.getId(), memberCount);
+        int requiredVotes = memberCount <= 1 ? 1 : (int) Math.ceil(memberCount * (2.0 / 3.0));
 
         Map<Long, List<ItineraryPlace>> placesByDayId = allPlaces.stream()
                 .collect(Collectors.groupingBy(p -> p.getDay().getId()));
@@ -416,14 +491,11 @@ public class ItineraryService {
             int idxOrder = 1;
             for (ItineraryPlace ip : dayPlaces) {
                 Place p = ip.getPlace();
-                List<PlaceVote> votes = votesByPlaceId.getOrDefault(ip.getId(), Collections.emptyList());
-                int up = (int) votes.stream().filter(v -> "UP".equalsIgnoreCase(v.getVoteType())).count();
-                int down = (int) votes.stream().filter(v -> "DOWN".equalsIgnoreCase(v.getVoteType())).count();
-                String myVote = userId == null ? null : votes.stream()
-                        .filter(v -> v.getUser() != null && userId.equals(v.getUser().getId()))
-                        .map(PlaceVote::getVoteType)
-                        .findFirst()
-                        .orElse(null);
+                Map<Long, String> voteMap = votesByPlaceId.getOrDefault(ip.getId(), Collections.emptyMap());
+                int up = (int) voteMap.values().stream().filter(v -> "UP".equalsIgnoreCase(v)).count();
+                int down = (int) voteMap.values().stream().filter(v -> "DOWN".equalsIgnoreCase(v)).count();
+                String myVote = userId == null ? null : voteMap.get(userId);
+                String resolvedStatus = up >= requiredVotes ? "CONFIRMED" : "VOTING";
 
                 placeItems.add(TripItineraryResponse.PlaceItem.builder()
                         .id(ip.getId())
@@ -442,7 +514,7 @@ public class ItineraryService {
                         .rating(ip.getRating())
                         .review(ip.getReview() != null ? ip.getReview() : "")
                         .photos(ip.getPhotos() != null ? ip.getPhotos() : Collections.emptyList())
-                        .status(ip.getStatus() != null ? ip.getStatus() : "VOTING")
+                        .status(resolvedStatus)
                         .votesUp(up)
                         .votesDown(down)
                         .myVote(myVote)
@@ -457,8 +529,6 @@ public class ItineraryService {
                     .places(placeItems)
                     .build());
         }
-
-        int memberCount = Math.max(1, tripMemberRepository.findByTrip(trip).size());
 
         return TripItineraryResponse.builder()
                 .tripId(trip.getId())

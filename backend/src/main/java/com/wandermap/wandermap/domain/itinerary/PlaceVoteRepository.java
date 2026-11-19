@@ -8,6 +8,7 @@ import java.util.Optional;
 public interface PlaceVoteRepository extends JpaRepository<PlaceVote, Long> {
     List<PlaceVote> findByItineraryPlaceId(Long itineraryPlaceId);
     List<PlaceVote> findByItineraryPlaceIdIn(List<Long> itineraryPlaceIds);
+    List<PlaceVote> findByUserId(Long userId);
     Optional<PlaceVote> findByItineraryPlaceIdAndUserId(Long itineraryPlaceId, Long userId);
     void deleteByItineraryPlaceId(Long itineraryPlaceId);
     void deleteByItineraryPlaceIdIn(List<Long> itineraryPlaceIds);

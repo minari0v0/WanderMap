@@ -1,9 +1,8 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { INITIAL_PLACES } from "@/lib/trip-data"
 import { MapView } from "@/components/map-view"
-import { WorkspaceSidebar } from "@/components/layout/workspace-sidebar"
 import { MembersBox } from "@/components/trip-detail/members-box"
 import {
   ItineraryTimeline,
@@ -14,6 +13,8 @@ import {
   type TripResponse,
   type TripItineraryResponse,
   type UpdatePlaceDiaryPayload,
+  type TripExpenseSummaryResponse,
+  type CreateExpensePayload,
 } from "@/lib/trip-service"
 import { authService, type UserResponse } from "@/lib/auth-service"
 import { showToast } from "@/components/ui/system-alert"
@@ -116,8 +117,11 @@ export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
   const [activeDay, setActiveDay] = useState(1)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false)
+  const [detailTab, setDetailTab] = useState<"info" | "diary">("diary")
+  const [expenseSummary, setExpenseSummary] = useState<TripExpenseSummaryResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const voteSeqRef = useRef<Record<string, number>>({})
 
   useEffect(() => {
     const user = authService.getSession()
@@ -159,15 +163,24 @@ export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
         }
         setTrip(tripData)
 
-        try {
-          const itinData = await tripService.getItinerary(tripData.id, session?.id)
+        const [itinResult, expenseResult] = await Promise.allSettled([
+          tripService.getItinerary(tripData.id, session?.id),
+          tripService.getExpenses(tripData.id),
+        ])
+
+        if (itinResult.status === "fulfilled") {
+          const itinData = itinResult.value
           setItinerary(itinData)
           const firstDayPlaces = itinData.days[0]?.places || []
           if (firstDayPlaces.length > 0) {
             setActiveId(String(firstDayPlaces[0].id))
           }
-        } catch (itinErr) {
-          console.warn("일정 데이터를 불러오지 못해 기본 상태로 표시합니다:", itinErr)
+        } else {
+          console.warn("일정 데이터를 불러오지 못해 기본 상태로 표시합니다:", itinResult.reason)
+        }
+
+        if (expenseResult.status === "fulfilled") {
+          setExpenseSummary(expenseResult.value)
         }
       } catch (err: any) {
         setError(err.message || "여행 정보를 불러오는 데 실패했습니다.")
@@ -210,14 +223,55 @@ export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
     [places, activeId]
   )
 
-  function handleSelectPlace(id: string) {
+  function handleSelectPlaceFromMap(id: string) {
     setActiveId(id)
+    setDetailTab("info")
+    setIsDetailViewOpen(true)
+  }
+
+  function handleSelectPlaceFromList(id: string) {
+    setActiveId(id)
+    setDetailTab("diary")
     setIsDetailViewOpen(true)
   }
 
   function handleChangeDay(day: number) {
     setActiveDay(day)
     setIsDetailViewOpen(false)
+  }
+
+  async function handleAddExpense(payload: CreateExpensePayload) {
+    if (isGuest || !currentUser || !trip) {
+      requireLoginToast()
+      return
+    }
+    try {
+      const updated = await tripService.addExpense(trip.id, payload)
+      setExpenseSummary(updated)
+      showToast(`'${payload.title}' 지출이 기록되었습니다.`, "success")
+    } catch (err: any) {
+      showToast(
+        err.response?.data?.message || err.response?.data?.error || "지출 기록에 실패했습니다.",
+        "error"
+      )
+    }
+  }
+
+  async function handleDeleteExpense(expenseId: number) {
+    if (isGuest || !currentUser || !trip) {
+      requireLoginToast()
+      return
+    }
+    try {
+      const updated = await tripService.deleteExpense(trip.id, expenseId)
+      setExpenseSummary(updated)
+      showToast("지출 항목이 삭제되었습니다.", "info")
+    } catch (err: any) {
+      showToast(
+        err.response?.data?.message || err.response?.data?.error || "지출 삭제에 실패했습니다.",
+        "error"
+      )
+    }
   }
 
   async function handleVote(id: string, dir: "up" | "down") {
@@ -228,17 +282,93 @@ export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
     setActiveId(id)
 
     if (itinerary && trip && /^\d+$/.test(id)) {
+      const numericPlaceId = Number(id)
+      const voteType: "UP" | "DOWN" = dir === "up" ? "UP" : "DOWN"
+      const previousItinerary = itinerary
+      const seq = (voteSeqRef.current[id] || 0) + 1
+      voteSeqRef.current[id] = seq
+
+      const memberCount = Math.max(1, itinerary.memberCount || 1)
+      const requiredVotes =
+        memberCount <= 1 ? 1 : Math.ceil(memberCount * (2 / 3))
+
+      // 0ms 낙관적 UI 즉시 반영
+      setItinerary((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          days: prev.days.map((day) => ({
+            ...day,
+            places: day.places.map((p) => {
+              if (p.id !== numericPlaceId) return p
+              let votesUp = p.votesUp ?? 0
+              let votesDown = p.votesDown ?? 0
+              let nextMyVote: "UP" | "DOWN" | null = voteType
+
+              if (p.myVote === voteType) {
+                if (voteType === "UP") votesUp = Math.max(0, votesUp - 1)
+                else votesDown = Math.max(0, votesDown - 1)
+                nextMyVote = null
+              } else {
+                if (p.myVote === "UP") votesUp = Math.max(0, votesUp - 1)
+                if (p.myVote === "DOWN") votesDown = Math.max(0, votesDown - 1)
+                if (voteType === "UP") votesUp += 1
+                else votesDown += 1
+              }
+
+              const nextStatus =
+                votesUp >= requiredVotes ? "CONFIRMED" : "VOTING"
+              return {
+                ...p,
+                votesUp,
+                votesDown,
+                myVote: nextMyVote,
+                status: nextStatus,
+              }
+            }),
+          })),
+        }
+      })
+
       try {
-        const updated = await tripService.votePlace(
+        const res = await tripService.votePlace(
           trip.id,
-          Number(id),
+          numericPlaceId,
           currentUser.id,
-          dir === "up" ? "UP" : "DOWN"
+          voteType
         )
-        setItinerary(updated)
+        if (voteSeqRef.current[id] === seq) {
+          setItinerary((prev) => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              days: prev.days.map((day) => ({
+                ...day,
+                places: day.places.map((p) =>
+                  p.id === numericPlaceId
+                    ? {
+                        ...p,
+                        votesUp: res.votesUp,
+                        votesDown: res.votesDown,
+                        myVote: res.myVote,
+                        status: res.status,
+                      }
+                    : p
+                ),
+              })),
+            }
+          })
+        }
         return
       } catch (err: any) {
-        showToast(err.response?.data?.message || "투표 반영에 실패했습니다.", "error")
+        if (voteSeqRef.current[id] === seq) {
+          setItinerary(previousItinerary)
+        }
+        showToast(
+          err.response?.data?.message || "투표 반영에 실패했습니다.",
+          "error"
+        )
+        return
       }
     }
 
@@ -419,13 +549,14 @@ export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
 
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-[#F8F8F6]">
-      {/* 1. 좌측 사이드바: 로그인된 회원에게만 표시하고 비로그인 게스트에게는 숨김 */}
-      {!isGuest && <WorkspaceSidebar currentTripId={tripId} />}
-
-      {/* 2. 우측 메인 작업 영역 */}
+      {/* 우측 메인 작업 영역 (좌측 사이드바는 로그인 유저 대상 WorkspaceAppShell에서 풀높이로 고정 제공) */}
       <div className="flex-1 flex flex-col h-dvh min-w-0 overflow-hidden">
         {/* 상단 헤더: 좌측(목적지 배지 + 여행 제목 + 기간) / 우측(멤버 아바타 + 공유 드롭다운 + 취향 설문) */}
-        <header className="flex h-20 shrink-0 items-center justify-between border-b border-[#E2E2DA] bg-white px-5 sm:px-7 shadow-2xs z-30">
+        <header
+          className={`flex h-20 shrink-0 items-center justify-between border-b border-[#E2E2DA] bg-white pr-5 sm:pr-7 shadow-2xs z-30 ${
+            isGuest ? "pl-5 sm:pl-7" : "pl-16 lg:pl-7"
+          }`}
+        >
           <div className="flex items-center gap-3.5 min-w-0">
             {isGuest && (
               <button
@@ -516,17 +647,17 @@ export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
 
         {/* 메인 2단 레이아웃: [좌측: 100% 풀스크린 동선 지도] / [우측: 장소 리스트 ↔ 장소 상세 슬라이드 패널] */}
         <main className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-4 p-4 overflow-hidden bg-[#F8F8F6]">
-          {/* 좌측(중앙) 영역: 별도 패널 분할 없이 지도가 100% 꽉 차게 렌더링 */}
+          {/* 좌측(중앙) 영역: 별도 패널 분할 없이 지도가 100% 꽉 차게 렌더링 (핀 클릭 시 1단계 '장소 정보' 탭 오픈) */}
           <div className="h-full min-h-0 rounded-2xl border border-[#E2E2DA] bg-white shadow-xs overflow-hidden">
             <MapView
               places={places}
               activeId={selectedPlace?.id || activeId}
-              onSelect={handleSelectPlace}
+              onSelect={handleSelectPlaceFromMap}
               destination={trip.destination}
             />
           </div>
 
-          {/* 우측 컬럼: 장소 선택 시 같은 컨테이너 안에서 상세/메모 뷰로 부드럽게 슬라이드 전환 */}
+          {/* 우측 컬럼: 장소 선택 시 같은 컨테이너 안에서 상세 [장소 정보 | 기록] 뷰로 부드럽게 슬라이드 전환 */}
           <div className="flex flex-col h-full min-h-0 overflow-hidden">
             <ItineraryTimeline
               places={places}
@@ -535,12 +666,19 @@ export function WanderMap({ tripId, readOnly = false }: WanderMapProps) {
               onChangeDay={handleChangeDay}
               dayDate={currentDayObj?.date}
               isDetailViewOpen={isDetailViewOpen}
-              onSelectPlace={handleSelectPlace}
+              detailTab={detailTab}
+              onChangeDetailTab={setDetailTab}
+              onSelectPlace={handleSelectPlaceFromList}
               onCloseDetailView={() => setIsDetailViewOpen(false)}
               onVote={handleVote}
               onAddPlaceSubmit={handleAddPlaceSubmit}
               onUpdatePlaceDiary={handleUpdatePlaceDiary}
               onDeletePlace={handleDeletePlace}
+              expenseSummary={expenseSummary}
+              tripMembers={trip.members}
+              currentUserId={currentUser?.id}
+              onAddExpense={handleAddExpense}
+              onDeleteExpense={handleDeleteExpense}
               readOnly={isGuest}
               totalDays={totalDaysCount}
             />

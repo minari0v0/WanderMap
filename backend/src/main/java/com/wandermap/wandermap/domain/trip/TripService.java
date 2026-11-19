@@ -2,12 +2,13 @@ package com.wandermap.wandermap.domain.trip;
 
 import com.wandermap.wandermap.domain.auth.User;
 import com.wandermap.wandermap.domain.auth.UserRepository;
+import com.wandermap.wandermap.domain.itinerary.PlaceVoteStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +18,8 @@ public class TripService {
     private final TripRepository tripRepository;
     private final TripMemberRepository tripMemberRepository;
     private final UserRepository userRepository;
+    private final TripInviteCacheStore tripInviteCacheStore;
+    private final PlaceVoteStore placeVoteStore;
 
     @Transactional
     public TripResponse createTrip(TripCreateRequest request) {
@@ -40,6 +43,9 @@ public class TripService {
                 .build();
         tripMemberRepository.save(ownerMember);
 
+        tripInviteCacheStore.cache(savedTrip.getInviteCode(), savedTrip.getId());
+        placeVoteStore.cacheMemberCount(savedTrip.getId(), 1);
+
         return TripResponse.from(savedTrip, List.of(ownerMember));
     }
 
@@ -58,7 +64,9 @@ public class TripService {
                     .role(TripRole.MEMBER)
                     .build();
             tripMemberRepository.save(newMember);
+            placeVoteStore.evictMemberCount(trip.getId());
         }
+        tripInviteCacheStore.cache(trip.getInviteCode(), trip.getId());
 
         return TripResponse.from(trip, tripMemberRepository.findByTrip(trip));
     }
@@ -70,8 +78,19 @@ public class TripService {
     }
 
     public TripResponse getTripByInviteCode(String inviteCode) {
+        Optional<Long> cachedTripId = tripInviteCacheStore.getTripId(inviteCode);
+        if (cachedTripId.isPresent()) {
+            Optional<Trip> cachedTrip = tripRepository.findById(cachedTripId.get());
+            if (cachedTrip.isPresent()) {
+                Trip trip = cachedTrip.get();
+                return TripResponse.from(trip, tripMemberRepository.findByTrip(trip));
+            }
+            tripInviteCacheStore.evict(inviteCode);
+        }
+
         Trip trip = tripRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 초대 코드입니다: " + inviteCode));
+        tripInviteCacheStore.cache(inviteCode, trip.getId());
         return TripResponse.from(trip, tripMemberRepository.findByTrip(trip));
     }
 

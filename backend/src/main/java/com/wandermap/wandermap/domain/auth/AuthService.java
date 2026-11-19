@@ -1,14 +1,20 @@
 package com.wandermap.wandermap.domain.auth;
 
+import com.wandermap.wandermap.domain.expense.TripExpenseRepository;
 import com.wandermap.wandermap.domain.itinerary.ItineraryDay;
 import com.wandermap.wandermap.domain.itinerary.ItineraryDayRepository;
 import com.wandermap.wandermap.domain.itinerary.ItineraryPlace;
 import com.wandermap.wandermap.domain.itinerary.ItineraryPlaceRepository;
+import com.wandermap.wandermap.domain.itinerary.PlaceVote;
 import com.wandermap.wandermap.domain.itinerary.PlaceVoteRepository;
+import com.wandermap.wandermap.domain.itinerary.PlaceVoteStore;
 import com.wandermap.wandermap.domain.preference.PreferenceRepository;
 import com.wandermap.wandermap.domain.trip.Trip;
+import com.wandermap.wandermap.domain.trip.TripInviteCacheStore;
+import com.wandermap.wandermap.domain.trip.TripMember;
 import com.wandermap.wandermap.domain.trip.TripMemberRepository;
 import com.wandermap.wandermap.domain.trip.TripRepository;
+import com.wandermap.wandermap.global.security.RefreshTokenStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,8 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,6 +42,11 @@ public class AuthService {
     private final ItineraryDayRepository itineraryDayRepository;
     private final ItineraryPlaceRepository itineraryPlaceRepository;
     private final PlaceVoteRepository placeVoteRepository;
+    private final PlaceVoteStore placeVoteStore;
+    private final TripInviteCacheStore tripInviteCacheStore;
+    private final EmailOtpStore emailOtpStore;
+    private final TripExpenseRepository tripExpenseRepository;
+    private final RefreshTokenStore refreshTokenStore;
     private final PasswordEncoder passwordEncoder;
 
     private static final java.util.regex.Pattern PASSWORD_PATTERN =
@@ -186,36 +198,20 @@ public class AuthService {
             throw new IllegalArgumentException("인증할 이메일 정보가 필요합니다.");
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        EmailVerification verification = emailVerificationRepository.findByEmail(targetEmail).orElse(null);
-
-        if (verification != null && !verification.isExpired()) {
-            if (!verification.canResend()) {
-                throw new IllegalArgumentException("인증 코드는 30초 간격으로 재전송할 수 있습니다. 잠시 후 다시 시도해 주세요.");
-            }
-            if (verification.getResendCount() >= MAX_RESEND_COUNT) {
-                throw new IllegalArgumentException("인증 코드 재전송 횟수(최대 5회)를 초과했습니다. 잠시 후 다시 시도해 주세요.");
-            }
+        if (emailOtpStore.isCooldownActive(targetEmail)) {
+            throw new IllegalArgumentException("인증 코드는 30초 간격으로 재전송할 수 있습니다. 잠시 후 다시 시도해 주세요.");
+        }
+        if (emailOtpStore.getResendCount(targetEmail) >= MAX_RESEND_COUNT) {
+            throw new IllegalArgumentException("인증 코드 재전송 횟수(최대 5회)를 초과했습니다. 잠시 후 다시 시도해 주세요.");
         }
 
         String code = generate6DigitCode();
-        LocalDateTime expiresAt = now.plusMinutes(EXPIRY_MINUTES);
-        LocalDateTime resendAvailableAt = now.plusSeconds(RESEND_COOLDOWN_SECONDS);
-
-        if (verification == null) {
-            verification = EmailVerification.builder()
-                    .email(targetEmail)
-                    .code(code)
-                    .resendCount(0)
-                    .expiresAt(expiresAt)
-                    .resendAvailableAt(resendAvailableAt)
-                    .build();
-        } else if (verification.isExpired()) {
-            verification.resetCode(code, expiresAt, resendAvailableAt);
-        } else {
-            verification.updateCode(code, expiresAt, resendAvailableAt);
-        }
-        emailVerificationRepository.save(verification);
+        emailOtpStore.saveOtp(
+                targetEmail,
+                code,
+                Duration.ofMinutes(EXPIRY_MINUTES),
+                Duration.ofSeconds(RESEND_COOLDOWN_SECONDS)
+        );
 
         System.out.println("\n==========================================");
         System.out.println("[WanderMap 이메일 인증 코드] " + targetEmail + " -> " + code + " (유효시간 5분)");
@@ -240,18 +236,14 @@ public class AuthService {
             throw new IllegalArgumentException("인증할 이메일 정보가 없습니다.");
         }
 
-        EmailVerification verification = emailVerificationRepository.findByEmail(targetEmail)
-                .orElseThrow(() -> new IllegalArgumentException("인증 요청 내역이 존재하지 않습니다. 코드를 다시 전송해 주세요."));
+        String savedCode = emailOtpStore.getOtp(targetEmail)
+                .orElseThrow(() -> new IllegalArgumentException("인증 요청 내역이 없거나 만료되었습니다. 코드를 다시 전송해 주세요."));
 
-        if (verification.isExpired()) {
-            throw new IllegalArgumentException("인증 코드가 만료되었습니다. 재전송 버튼을 눌러 새 코드를 받아주세요.");
-        }
-
-        if (!verification.getCode().equals(code.trim())) {
+        if (!savedCode.equals(code.trim())) {
             throw new IllegalArgumentException("인증 코드가 일치하지 않습니다. 다시 확인해 주세요.");
         }
 
-        emailVerificationRepository.delete(verification);
+        emailOtpStore.clearOtp(targetEmail);
 
         if (user == null) {
             user = userRepository.findByEmail(targetEmail).orElse(null);
@@ -293,10 +285,31 @@ public class AuthService {
     public void withdraw(Long userId) {
         User user = getUser(userId);
 
-        // 1. 유저가 제출한 투표, 선호도 설문 및 참여한 여정 멤버십 정리
+        // 1. 유저가 제출한 투표, 선호도 설문, 지출 내역 참조 및 참여한 여정 멤버십 정리
+        List<Long> votedPlaceIds = placeVoteRepository.findByUserId(userId).stream()
+                .map(PlaceVote::getItineraryPlace)
+                .filter(Objects::nonNull)
+                .map(ItineraryPlace::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        List<Long> joinedTripIds = tripMemberRepository.findByUserOrderByJoinedAtDesc(user).stream()
+                .map(TripMember::getTrip)
+                .filter(Objects::nonNull)
+                .map(Trip::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
         placeVoteRepository.deleteByUserId(userId);
+        placeVoteStore.evictPlaces(votedPlaceIds);
         preferenceRepository.deleteByUserId(userId);
+        tripExpenseRepository.clearPayerUserByUserId(userId);
+        tripExpenseRepository.clearCreatedByByUserId(userId);
         tripMemberRepository.deleteByUser(user);
+        for (Long tid : joinedTripIds) {
+            placeVoteStore.evictMemberCount(tid);
+        }
 
         // 2. 유저가 생성한 여정 방 및 해당 방의 하위 데이터 정리
         List<Trip> createdTrips = tripRepository.findByCreatedBy(user);
@@ -308,19 +321,25 @@ public class AuthService {
                 if (!places.isEmpty()) {
                     List<Long> placeIds = places.stream().map(ItineraryPlace::getId).toList();
                     placeVoteRepository.deleteByItineraryPlaceIdIn(placeIds);
+                    placeVoteStore.evictPlaces(placeIds);
                     itineraryPlaceRepository.deleteAll(places);
                 }
                 itineraryDayRepository.deleteAll(days);
             }
+            tripExpenseRepository.deleteByTripId(trip.getId());
             preferenceRepository.deleteByTripId(trip.getId());
             tripMemberRepository.deleteByTrip(trip);
+            tripInviteCacheStore.evict(trip.getInviteCode());
+            placeVoteStore.evictMemberCount(trip.getId());
             tripRepository.delete(trip);
         }
 
-        // 3. 소셜 연동, 이메일 인증 내역 및 계정 영구 삭제
+        // 3. 소셜 연동, 이메일 인증 내역, 리프레시 토큰 및 계정 영구 삭제
         socialAccountRepository.deleteByUserId(userId);
+        emailOtpStore.clearOtp(user.getEmail());
         emailVerificationRepository.deleteByEmail(user.getEmail());
         userRepository.delete(user);
+        refreshTokenStore.deleteAllForUser(userId);
     }
 
     private User getUser(Long userId) {
