@@ -92,6 +92,7 @@ export default function HomePage() {
         endDate,
         userId: currentUser.id,
       })
+      window.dispatchEvent(new Event("wandermap:trips-updated"))
       setIsCreateModalOpen(false)
       setTitle("")
       setDestination("")

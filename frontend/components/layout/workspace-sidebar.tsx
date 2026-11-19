@@ -151,7 +151,15 @@ export function WorkspaceSidebar({
   useEffect(() => {
     function handleUserUpdated(e: Event) {
       const customEvent = e as CustomEvent<UserResponse | null>
-      setUser(customEvent.detail)
+      const updated = customEvent.detail
+      setUser((prev) => {
+        if (updated && (!prev || prev.id !== updated.id)) {
+          loadTrips(updated.id)
+        } else if (!updated) {
+          setTrips([])
+        }
+        return updated
+      })
     }
     function handleOpenCreateTripEvent(e: Event) {
       const customEvent = e as CustomEvent<{
@@ -171,11 +179,19 @@ export function WorkspaceSidebar({
       setShowInternalDatePicker(false)
       setIsInternalCreateOpen(true)
     }
+    function handleTripsUpdated() {
+      const latestSession = authService.getSession()
+      if (latestSession) {
+        loadTrips(latestSession.id)
+      }
+    }
     window.addEventListener("wandermap:user-updated", handleUserUpdated)
     window.addEventListener("wandermap:open-create-trip", handleOpenCreateTripEvent)
+    window.addEventListener("wandermap:trips-updated", handleTripsUpdated)
     return () => {
       window.removeEventListener("wandermap:user-updated", handleUserUpdated)
       window.removeEventListener("wandermap:open-create-trip", handleOpenCreateTripEvent)
+      window.removeEventListener("wandermap:trips-updated", handleTripsUpdated)
     }
   }, [])
 
@@ -213,11 +229,10 @@ export function WorkspaceSidebar({
     }
   }
 
-  function handleLogout() {
-    authService.clearSession()
+  async function handleLogout() {
+    await authService.logout()
     setUser(null)
     router.push("/")
-    window.location.reload()
   }
 
   function handleNavigateHome() {

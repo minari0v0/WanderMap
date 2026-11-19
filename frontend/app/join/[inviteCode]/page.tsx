@@ -24,6 +24,7 @@ export default function JoinPage({ params }: JoinPageProps) {
 
       try {
         const response = await tripService.joinTrip(inviteCode, session.id)
+        window.dispatchEvent(new Event("wandermap:trips-updated"))
         router.replace(`/trips/${response.inviteCode || response.id}`)
       } catch (err: any) {
         setError(

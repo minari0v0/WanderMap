@@ -102,6 +102,7 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
         userId: currentUser.id,
       })
 
+      window.dispatchEvent(new Event("wandermap:trips-updated"))
       router.push(`/trips/${newTrip.inviteCode || newTrip.id}`)
     } catch (err) {
       console.error("일반 일정 생성 오류:", err)
@@ -168,6 +169,7 @@ export function AiPromptHub({ currentUser, onOpenManualModal }: AiPromptHubProps
         userId: currentUser.id,
       })
 
+      window.dispatchEvent(new Event("wandermap:trips-updated"))
       setTimeout(() => {
         router.push(`/trips/${newTrip.inviteCode || newTrip.id}`)
       }, 650)
