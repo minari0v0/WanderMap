@@ -71,6 +71,10 @@ export function TimePicker({
   const [internalOpen, setInternalOpen] = useState(false)
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const hourListRef = useRef<HTMLDivElement | null>(null)
+  const minuteListRef = useRef<HTMLDivElement | null>(null)
+  const hourBtnRefs = useRef<Record<number, HTMLButtonElement | null>>({})
+  const minuteBtnRefs = useRef<Record<number, HTMLButtonElement | null>>({})
 
   function setOpen(next: boolean) {
     if (controlledOpen === undefined) {
@@ -91,6 +95,35 @@ export function TimePicker({
     setHour12(next.hour12)
     setMinute(next.minute)
   }, [value, isOpen, disabled])
+
+  // 팝오버가 열릴 때 현재 선택된 시/분 항목이 스크롤 영역 중앙에 바로 보이도록 스크롤
+  useEffect(() => {
+    if (!isOpen) return
+    const target = parse24HourTime(value)
+    const snappedMinute = Math.min(55, Math.round(target.minute / 5) * 5)
+
+    const rafId = window.requestAnimationFrame(() => {
+      const hourList = hourListRef.current
+      const hourBtn = hourBtnRefs.current[target.hour12]
+      if (hourList && hourBtn) {
+        hourList.scrollTop = Math.max(
+          0,
+          hourBtn.offsetTop - hourList.clientHeight / 2 + hourBtn.clientHeight / 2
+        )
+      }
+
+      const minuteList = minuteListRef.current
+      const minuteBtn = minuteBtnRefs.current[snappedMinute]
+      if (minuteList && minuteBtn) {
+        minuteList.scrollTop = Math.max(
+          0,
+          minuteBtn.offsetTop - minuteList.clientHeight / 2 + minuteBtn.clientHeight / 2
+        )
+      }
+    })
+
+    return () => window.cancelAnimationFrame(rafId)
+  }, [isOpen, value])
 
   useEffect(() => {
     if (disabled && isOpen) {
@@ -235,12 +268,18 @@ export function TimePicker({
             {/* 2. 시 (1~12) */}
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold text-[#8A8A93] text-center">시</span>
-              <div className="h-[136px] overflow-y-auto pr-0.5 space-y-1 custom-scrollbar">
+              <div
+                ref={hourListRef}
+                className="relative h-[136px] overflow-y-auto pr-0.5 space-y-1 custom-scrollbar"
+              >
                 {HOURS_12.map((h) => {
                   const active = hour12 === h
                   return (
                     <button
                       key={h}
+                      ref={(el) => {
+                        hourBtnRefs.current[h] = el
+                      }}
                       type="button"
                       onClick={() => setHour12(h)}
                       className={`w-full py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
@@ -259,12 +298,18 @@ export function TimePicker({
             {/* 3. 분 (00~55) */}
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold text-[#8A8A93] text-center">분</span>
-              <div className="h-[136px] overflow-y-auto pr-0.5 space-y-1 custom-scrollbar">
+              <div
+                ref={minuteListRef}
+                className="relative h-[136px] overflow-y-auto pr-0.5 space-y-1 custom-scrollbar"
+              >
                 {MINUTES_5.map((m) => {
                   const active = minute === m
                   return (
                     <button
                       key={m}
+                      ref={(el) => {
+                        minuteBtnRefs.current[m] = el
+                      }}
                       type="button"
                       onClick={() => setMinute(m)}
                       className={`w-full py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
