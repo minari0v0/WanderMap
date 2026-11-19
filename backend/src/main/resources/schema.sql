@@ -118,6 +118,21 @@ CREATE TABLE IF NOT EXISTS place_votes (
     UNIQUE (itinerary_place_id, user_id)
 );
 
+-- 일차별 지출 내역
+CREATE TABLE IF NOT EXISTS trip_expenses (
+    id            BIGSERIAL PRIMARY KEY,
+    trip_id       BIGINT NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    day_number    INTEGER NOT NULL,
+    title         VARCHAR(120) NOT NULL,
+    amount        BIGINT NOT NULL,
+    currency      VARCHAR(10) NOT NULL DEFAULT 'KRW',
+    payer_type    VARCHAR(20) NOT NULL DEFAULT 'UNSPECIFIED',
+    payer_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    payer_name    VARCHAR(60),
+    created_by    BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at    TIMESTAMP DEFAULT NOW()
+);
+
 -- 인덱스 전략
 CREATE INDEX IF NOT EXISTS idx_users_email                    ON users(email);
 CREATE INDEX IF NOT EXISTS idx_social_user_id                 ON user_social_accounts(user_id);
@@ -127,6 +142,7 @@ CREATE INDEX IF NOT EXISTS idx_itinerary_days_trip_id         ON itinerary_days(
 CREATE INDEX IF NOT EXISTS idx_itinerary_places_day_id        ON itinerary_places(day_id);
 CREATE INDEX IF NOT EXISTS idx_place_votes_itinerary_place_id ON place_votes(itinerary_place_id);
 CREATE INDEX IF NOT EXISTS idx_trips_invite_code              ON trips(invite_code);
+CREATE INDEX IF NOT EXISTS idx_trip_expenses_trip_day         ON trip_expenses(trip_id, day_number);
 
 -- -----------------------------------------------------
 -- 초기 데모용 데이터 적재 (초기 로딩 시 에러 방지)

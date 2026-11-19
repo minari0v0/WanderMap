@@ -14,8 +14,14 @@ import {
   Check,
 } from "lucide-react"
 import type { Place } from "@/lib/trip-data"
-import type { UpdatePlaceDiaryPayload } from "@/lib/trip-service"
+import type {
+  UpdatePlaceDiaryPayload,
+  TripMemberItem,
+  TripExpenseSummaryResponse,
+  CreateExpensePayload,
+} from "@/lib/trip-service"
 import { PlaceDiaryPanel } from "@/components/trip-detail/place-diary-panel"
+import { DayExpenseBar } from "@/components/trip-detail/day-expense-bar"
 import { TimePicker } from "@/components/ui/time-picker"
 import { showToast } from "@/components/ui/system-alert"
 
@@ -36,6 +42,8 @@ export interface ItineraryTimelineProps {
   onChangeDay: (day: number) => void
   dayDate?: string
   isDetailViewOpen?: boolean
+  detailTab?: "info" | "diary"
+  onChangeDetailTab?: (tab: "info" | "diary") => void
   onSelectPlace: (id: string) => void
   onCloseDetailView: () => void
   onVote: (id: string, dir: "up" | "down") => void
@@ -47,6 +55,11 @@ export interface ItineraryTimelineProps {
   }) => Promise<void> | void
   onUpdatePlaceDiary?: (placeId: string, payload: UpdatePlaceDiaryPayload) => Promise<void>
   onDeletePlace?: (placeId: string) => Promise<void>
+  expenseSummary?: TripExpenseSummaryResponse | null
+  tripMembers?: TripMemberItem[]
+  currentUserId?: number
+  onAddExpense?: (payload: CreateExpensePayload) => Promise<void> | void
+  onDeleteExpense?: (expenseId: number) => Promise<void> | void
   readOnly?: boolean
   totalDays?: number
 }
@@ -73,17 +86,25 @@ export function ItineraryTimeline({
   onChangeDay,
   dayDate,
   isDetailViewOpen = false,
+  detailTab = "diary",
+  onChangeDetailTab,
   onSelectPlace,
   onCloseDetailView,
   onVote,
   onAddPlaceSubmit,
   onUpdatePlaceDiary,
   onDeletePlace,
+  expenseSummary,
+  tripMembers,
+  currentUserId,
+  onAddExpense,
+  onDeleteExpense,
   readOnly = false,
   totalDays = 3,
 }: ItineraryTimelineProps) {
   const [isEditMode, setIsEditMode] = useState(false)
   const [openTimePlaceId, setOpenTimePlaceId] = useState<string | null>(null)
+  const [isExpenseOpen, setIsExpenseOpen] = useState(false)
 
   // 하단 장소 직접 추가 폼 상태
   const [isAddingPlace, setIsAddingPlace] = useState(false)
@@ -95,6 +116,8 @@ export function ItineraryTimeline({
   const formattedDate = formatKoreanDateWithWeekday(dayDate)
   const selectedPlace = places.find((p) => p.id === activeId) || places[0] || null
   const showDetailSlide = Boolean(isDetailViewOpen && selectedPlace)
+  const currentDayExpense =
+    expenseSummary?.days?.find((d) => d.dayNumber === activeDay) || null
 
   function handleToggleEditMode() {
     setIsEditMode((prev) => {
@@ -178,7 +201,7 @@ export function ItineraryTimeline({
                 </span>
               </div>
 
-              {!readOnly && places.length > 0 && (
+              {!readOnly && !isExpenseOpen && places.length > 0 && (
                 <button
                   type="button"
                   onClick={handleToggleEditMode}
@@ -194,7 +217,33 @@ export function ItineraryTimeline({
             </div>
           </div>
 
-          {/* 2. 장소 카드 리스트 (클릭 시 우측 슬라이드 상세 기록 뷰로 부드럽게 전환) */}
+          {/* 1.5 일자별 지출 요약 바 / 펼침 시 아바타 중심 지출 뷰 */}
+          <DayExpenseBar
+            activeDay={activeDay}
+            daySummary={currentDayExpense}
+            tripTotalAmount={expenseSummary?.tripTotalAmount ?? 0}
+            tripTotalsByCurrency={expenseSummary?.tripTotalsByCurrency}
+            members={tripMembers}
+            currentUserId={currentUserId}
+            readOnly={readOnly}
+            isOpen={isExpenseOpen}
+            onToggleOpen={() => {
+              setIsExpenseOpen((prev) => {
+                const next = !prev
+                if (next) {
+                  setOpenTimePlaceId(null)
+                  setIsEditMode(false)
+                }
+                return next
+              })
+            }}
+            onAddExpense={onAddExpense}
+            onDeleteExpense={onDeleteExpense}
+          />
+
+          {/* 2. 장소 카드 리스트 (지출 화면이 닫혀 있을 때만 표시) */}
+          {!isExpenseOpen && (
+          <>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-[#F8F8F6]/60">
             {places.length === 0 ? (
               <div className="py-16 text-center space-y-2">
@@ -423,16 +472,20 @@ export function ItineraryTimeline({
               )}
             </div>
           )}
+          </>
+          )}
         </div>
 
         {/* =================================================================
-            SLIDE 2: 선택한 장소 상세 & 마크다운 메모 뷰 (리스트에서 옆으로 부드럽게 전환됨)
+            SLIDE 2: 선택한 장소 상세 [장소 정보 | 기록] 뷰 (리스트에서 옆으로 부드럽게 전환됨)
            ================================================================= */}
         <div className="w-1/2 h-full flex flex-col overflow-hidden">
           <PlaceDiaryPanel
             place={selectedPlace}
             dayNumber={activeDay}
             readOnly={readOnly}
+            activeTab={detailTab}
+            onChangeTab={onChangeDetailTab}
             onBackToList={onCloseDetailView}
             onVote={onVote}
             onSaveDiary={onUpdatePlaceDiary}
