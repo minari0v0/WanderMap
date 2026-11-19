@@ -1,3 +1,4 @@
+import axios from "axios"
 import { apiClient } from "./api-client"
 
 export interface UserResponse {
@@ -10,6 +11,12 @@ export interface UserResponse {
   provider: string
   linkedProviders?: string[]
   createdAt: string
+}
+
+export interface AuthTokenResponse {
+  user: UserResponse
+  accessToken: string
+  refreshToken: string
 }
 
 export interface SignupRequest {
@@ -113,19 +120,43 @@ export function getCleanAvatarUrl(imgUrl?: string | null): string {
 }
 
 export const authService = {
-  signup: async (data: SignupRequest): Promise<UserResponse> => {
-    const response = await apiClient.post<UserResponse>("/api/auth/signup", data)
+  signup: async (data: SignupRequest): Promise<AuthTokenResponse> => {
+    const response = await apiClient.post<AuthTokenResponse>("/api/auth/signup", data)
     return response.data
   },
 
-  login: async (data: LoginRequest): Promise<UserResponse> => {
-    const response = await apiClient.post<UserResponse>("/api/auth/login", data)
+  login: async (data: LoginRequest): Promise<AuthTokenResponse> => {
+    const response = await apiClient.post<AuthTokenResponse>("/api/auth/login", data)
     return response.data
   },
 
-  getMe: async (userId: number): Promise<UserResponse> => {
+  refresh: async (): Promise<AuthTokenResponse | null> => {
+    const refreshToken = authService.getRefreshToken()
+    if (!refreshToken) return null
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+    const response = await axios.post<AuthTokenResponse>(
+      `${baseUrl}/api/auth/refresh`,
+      { refreshToken },
+      { headers: { "Content-Type": "application/json" } }
+    )
+    authService.setAuthSession(response.data)
+    return response.data
+  },
+
+  logout: async (): Promise<void> => {
+    const refreshToken = authService.getRefreshToken()
+    try {
+      await apiClient.post("/api/auth/logout", refreshToken ? { refreshToken } : {})
+    } catch {
+      // 서버 로그아웃 실패 여부와 무관하게 로컬 세션 정리
+    } finally {
+      authService.clearSession()
+    }
+  },
+
+  getMe: async (userId?: number): Promise<UserResponse> => {
     const response = await apiClient.get<UserResponse>("/api/auth/me", {
-      params: { userId },
+      params: userId ? { userId } : undefined,
     })
     return response.data
   },
@@ -204,6 +235,27 @@ export const authService = {
     authService.clearSession()
   },
 
+  getAccessToken: (): string | null => {
+    if (typeof window === "undefined") return null
+    return localStorage.getItem("accessToken")
+  },
+
+  getRefreshToken: (): string | null => {
+    if (typeof window === "undefined") return null
+    return localStorage.getItem("refreshToken")
+  },
+
+  setTokens: (accessToken: string, refreshToken: string) => {
+    if (typeof window === "undefined") return
+    localStorage.setItem("accessToken", accessToken)
+    localStorage.setItem("refreshToken", refreshToken)
+  },
+
+  setAuthSession: (auth: AuthTokenResponse) => {
+    authService.setTokens(auth.accessToken, auth.refreshToken)
+    authService.setSession(auth.user)
+  },
+
   setSession: (user: UserResponse) => {
     if (typeof window === "undefined") return
     const existingAvatar = localStorage.getItem("profileImage")
@@ -239,13 +291,16 @@ export const authService = {
     localStorage.removeItem("emailVerified")
     localStorage.removeItem("provider")
     localStorage.removeItem("linkedProviders")
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("refreshToken")
     window.dispatchEvent(new CustomEvent("wandermap:user-updated", { detail: null }))
   },
 
   getSession: (): UserResponse | null => {
     if (typeof window === "undefined") return null
     const isAuth = localStorage.getItem("isAuthenticated")
-    if (isAuth !== "true") return null
+    const accessToken = localStorage.getItem("accessToken")
+    if (isAuth !== "true" || !accessToken) return null
     const id = Number(localStorage.getItem("userId"))
     if (!id) return null
     let linkedProviders: string[] = []

@@ -1,5 +1,6 @@
 package com.wandermap.wandermap.domain.preference;
 
+import com.wandermap.wandermap.global.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +19,9 @@ public class PreferenceController {
             @PathVariable Long tripId,
             @RequestBody PreferenceSubmitRequest request,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
-        if (request.getUserId() == null && headerUserId != null) {
-            request.setUserId(headerUserId);
-        }
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (request.getUserId() != null ? request.getUserId() : headerUserId);
+        request.setUserId(resolvedUserId);
         PreferenceResponse response = preferenceService.submitPreference(tripId, request);
         return ResponseEntity.ok(response);
     }
@@ -30,7 +31,8 @@ public class PreferenceController {
             @PathVariable Long tripId,
             @RequestParam(required = false) Long userId,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
-        Long resolvedUserId = userId != null ? userId : headerUserId;
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (userId != null ? userId : headerUserId);
         PreferenceResponse response = preferenceService.getMyPreference(tripId, resolvedUserId);
         return ResponseEntity.ok(response);
     }

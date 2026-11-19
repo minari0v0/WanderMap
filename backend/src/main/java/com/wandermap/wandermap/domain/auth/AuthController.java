@@ -1,10 +1,16 @@
 package com.wandermap.wandermap.domain.auth;
 
+import com.wandermap.wandermap.global.security.JwtTokenProvider;
+import com.wandermap.wandermap.global.security.RefreshTokenStore;
+import com.wandermap.wandermap.global.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -12,12 +18,14 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenStore refreshTokenStore;
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest request) {
         try {
             UserResponse response = authService.signup(request);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(issueTokens(response));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));
         }
@@ -27,10 +35,45 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
             UserResponse response = authService.login(request);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(issueTokens(response));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));
         }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody(required = false) Map<String, String> body) {
+        String refreshToken = body != null ? body.get("refreshToken") : null;
+        Optional<JwtTokenProvider.JwtClaims> claimsOpt = jwtTokenProvider.parseAndValidate(refreshToken, "refresh");
+        if (claimsOpt.isEmpty()) {
+            return unauthorizedRefreshResponse("유효하지 않거나 만료된 리프레시 토큰입니다.");
+        }
+
+        JwtTokenProvider.JwtClaims claims = claimsOpt.get();
+        if (!refreshTokenStore.exists(claims.userId(), claims.jti())) {
+            return unauthorizedRefreshResponse("만료되었거나 이미 사용된 리프레시 토큰입니다.");
+        }
+
+        UserResponse user;
+        try {
+            user = authService.getMe(claims.userId());
+        } catch (IllegalArgumentException e) {
+            refreshTokenStore.delete(claims.userId(), claims.jti());
+            return unauthorizedRefreshResponse("존재하지 않는 사용자입니다.");
+        }
+
+        refreshTokenStore.delete(claims.userId(), claims.jti());
+        return ResponseEntity.ok(issueTokens(user));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody(required = false) Map<String, String> body) {
+        String refreshToken = body != null ? body.get("refreshToken") : null;
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            jwtTokenProvider.parseAndValidate(refreshToken, "refresh")
+                    .ifPresent(claims -> refreshTokenStore.delete(claims.userId(), claims.jti()));
+        }
+        return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
     }
 
     @GetMapping("/me")
@@ -39,7 +82,7 @@ public class AuthController {
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
         try {
-            Long resolvedUserId = userId != null ? userId : headerUserId;
+            Long resolvedUserId = resolveUserId(userId != null ? userId : headerUserId);
             UserResponse response = authService.getMe(resolvedUserId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -53,7 +96,8 @@ public class AuthController {
             @RequestParam(required = false) Long userId
     ) {
         try {
-            boolean isDuplicate = authService.isNicknameDuplicate(nickname, userId);
+            Long resolvedUserId = resolveUserId(userId);
+            boolean isDuplicate = authService.isNicknameDuplicate(nickname, resolvedUserId);
             return ResponseEntity.ok(isDuplicate);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));
@@ -66,8 +110,8 @@ public class AuthController {
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
         try {
-            Long bodyUserId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
-            Long resolvedUserId = bodyUserId != null ? bodyUserId : headerUserId;
+            Long bodyUserId = parseLongValue(body.get("userId"));
+            Long resolvedUserId = resolveUserId(bodyUserId != null ? bodyUserId : headerUserId);
             String nickname = body.get("nickname") != null ? String.valueOf(body.get("nickname")) : null;
             String profileImage = body.get("profileImage") != null ? String.valueOf(body.get("profileImage")) : null;
             String bio = body.get("bio") != null ? String.valueOf(body.get("bio")) : null;
@@ -85,8 +129,8 @@ public class AuthController {
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
         try {
-            Long bodyUserId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
-            Long resolvedUserId = bodyUserId != null ? bodyUserId : headerUserId;
+            Long bodyUserId = parseLongValue(body.get("userId"));
+            Long resolvedUserId = resolveUserId(bodyUserId != null ? bodyUserId : headerUserId);
             String currentPassword = body.get("currentPassword") != null ? String.valueOf(body.get("currentPassword")) : null;
             String newPassword = body.get("newPassword") != null ? String.valueOf(body.get("newPassword")) : null;
             String newPasswordConfirm = body.get("newPasswordConfirm") != null ? String.valueOf(body.get("newPasswordConfirm")) : null;
@@ -99,12 +143,16 @@ public class AuthController {
     }
 
     @PostMapping("/email/verification-request")
-    public ResponseEntity<?> requestEmailVerification(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> requestEmailVerification(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
+    ) {
         try {
-            Long userId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
+            Long bodyUserId = parseLongValue(body.get("userId"));
+            Long resolvedUserId = resolveUserId(bodyUserId != null ? bodyUserId : headerUserId);
             String email = body.get("email") != null ? String.valueOf(body.get("email")) : null;
 
-            String code = authService.sendEmailVerificationCode(userId, email);
+            String code = authService.sendEmailVerificationCode(resolvedUserId, email);
             return ResponseEntity.ok(Map.of(
                     "message", "인증 코드가 발송되었습니다. (유효시간 5분)",
                     "devCode", code
@@ -115,13 +163,17 @@ public class AuthController {
     }
 
     @PostMapping("/email/verify")
-    public ResponseEntity<?> verifyEmail(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> verifyEmail(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
+    ) {
         try {
-            Long userId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
+            Long bodyUserId = parseLongValue(body.get("userId"));
+            Long resolvedUserId = resolveUserId(bodyUserId != null ? bodyUserId : headerUserId);
             String email = body.get("email") != null ? String.valueOf(body.get("email")) : null;
             String code = body.get("code") != null ? String.valueOf(body.get("code")) : null;
 
-            UserResponse updatedUser = authService.verifyEmailCode(userId, email, code);
+            UserResponse updatedUser = authService.verifyEmailCode(resolvedUserId, email, code);
             return ResponseEntity.ok(Map.of(
                     "verified", true,
                     "message", "이메일 인증이 완료되었습니다.",
@@ -135,13 +187,15 @@ public class AuthController {
     @PostMapping("/social/{provider}")
     public ResponseEntity<?> linkSocial(
             @PathVariable String provider,
-            @RequestBody Map<String, Object> body
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
         try {
-            Long userId = body.get("userId") != null ? Long.valueOf(String.valueOf(body.get("userId"))) : null;
+            Long bodyUserId = parseLongValue(body.get("userId"));
+            Long resolvedUserId = resolveUserId(bodyUserId != null ? bodyUserId : headerUserId);
             String oauthId = body.get("oauthId") != null ? String.valueOf(body.get("oauthId")) : null;
 
-            UserResponse response = authService.linkSocial(userId, provider, oauthId);
+            UserResponse response = authService.linkSocial(resolvedUserId, provider, oauthId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));
@@ -151,10 +205,12 @@ public class AuthController {
     @DeleteMapping("/social/{provider}")
     public ResponseEntity<?> unlinkSocial(
             @PathVariable String provider,
-            @RequestParam Long userId
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
     ) {
         try {
-            UserResponse response = authService.unlinkSocial(userId, provider);
+            Long resolvedUserId = resolveUserId(userId != null ? userId : headerUserId);
+            UserResponse response = authService.unlinkSocial(resolvedUserId, provider);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));
@@ -162,12 +218,54 @@ public class AuthController {
     }
 
     @DeleteMapping("/withdraw")
-    public ResponseEntity<?> withdraw(@RequestParam Long userId) {
+    public ResponseEntity<?> withdraw(
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId
+    ) {
         try {
-            authService.withdraw(userId);
+            Long resolvedUserId = resolveUserId(userId != null ? userId : headerUserId);
+            authService.withdraw(resolvedUserId);
             return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "message", e.getMessage()));
         }
+    }
+
+    private AuthTokenResponse issueTokens(UserResponse user) {
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail());
+        JwtTokenProvider.RefreshTokenResult refreshResult = jwtTokenProvider.generateRefreshToken(user.getId(), user.getEmail());
+        refreshTokenStore.save(user.getId(), refreshResult.jti(), Duration.ofMillis(refreshResult.ttlMillis()));
+        return AuthTokenResponse.builder()
+                .user(user)
+                .accessToken(accessToken)
+                .refreshToken(refreshResult.token())
+                .build();
+    }
+
+    private static Long resolveUserId(Long fallbackUserId) {
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        return authUserId != null ? authUserId : fallbackUserId;
+    }
+
+    private static Long parseLongValue(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        if (raw instanceof Number number) {
+            return number.longValue();
+        }
+        String str = String.valueOf(raw).trim();
+        if (str.isEmpty() || "null".equalsIgnoreCase(str)) {
+            return null;
+        }
+        return Long.valueOf(str);
+    }
+
+    private static ResponseEntity<Map<String, Object>> unauthorizedRefreshResponse(String message) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "status", 401,
+                "error", message,
+                "message", message
+        ));
     }
 }

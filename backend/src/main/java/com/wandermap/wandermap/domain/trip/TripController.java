@@ -1,5 +1,6 @@
 package com.wandermap.wandermap.domain.trip;
 
+import com.wandermap.wandermap.global.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +16,9 @@ public class TripController {
     public ResponseEntity<TripResponse> createTrip(
             @RequestBody TripCreateRequest request,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
-        if (request.getUserId() == null && headerUserId != null) {
-            request.setUserId(headerUserId);
-        }
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (request.getUserId() != null ? request.getUserId() : headerUserId);
+        request.setUserId(resolvedUserId);
         TripResponse response = tripService.createTrip(request);
         return ResponseEntity.ok(response);
     }
@@ -27,7 +28,8 @@ public class TripController {
             @PathVariable String inviteCode,
             @RequestParam(required = false) Long userId,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
-        Long resolvedUserId = userId != null ? userId : headerUserId;
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (userId != null ? userId : headerUserId);
         TripResponse response = tripService.joinTrip(inviteCode, resolvedUserId);
         return ResponseEntity.ok(response);
     }
@@ -50,7 +52,8 @@ public class TripController {
     public ResponseEntity<java.util.List<TripResponse>> getMyTrips(
             @RequestParam(required = false) Long userId,
             @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
-        Long resolvedUserId = userId != null ? userId : headerUserId;
+        Long authUserId = SecurityUtils.getCurrentUserId();
+        Long resolvedUserId = authUserId != null ? authUserId : (userId != null ? userId : headerUserId);
         java.util.List<TripResponse> response = tripService.getMyTrips(resolvedUserId);
         return ResponseEntity.ok(response);
     }

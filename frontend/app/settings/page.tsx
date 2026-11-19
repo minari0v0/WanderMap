@@ -549,8 +549,8 @@ export default function SettingsPage() {
 
   // 로그아웃 확인
   const handleConfirmLogout = () => {
-    showConfirm("정말 로그아웃 하시겠습니까?", () => {
-      authService.clearSession()
+    showConfirm("정말 로그아웃 하시겠습니까?", async () => {
+      await authService.logout()
       router.push("/")
     })
   }

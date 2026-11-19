@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { GradientBackground } from "@/components/ui/jade-sky"
 import { SignInPage } from "@/components/ui/sign-in"
-import { authService, generateRandomProfileImage } from "@/lib/auth-service"
+import { authService } from "@/lib/auth-service"
 import { X, ShieldCheck, FileText } from "lucide-react"
 
 function LoginContent() {
@@ -15,6 +15,7 @@ function LoginContent() {
   const redirectTo =
     redirectParam && redirectParam.startsWith("/") ? redirectParam : "/"
 
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [mode, setMode] = useState<"signin" | "signup">(initialMode)
   const [isLoading, setIsLoading] = useState(false)
   const [loginMethod, setLoginMethod] = useState<string | null>(null)
@@ -23,6 +24,39 @@ function LoginContent() {
   // 약관 모달 상태
   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null)
 
+  // 이미 유효한 JWT 로그인 세션이 있다면 홈(또는 redirect 대상)으로 즉시 이동
+  useEffect(() => {
+    let active = true
+
+    async function verifyExistingSession() {
+      const session = authService.getSession()
+      const accessToken = authService.getAccessToken()
+
+      if (!session || !accessToken) {
+        if (typeof window !== "undefined" && localStorage.getItem("isAuthenticated") === "true") {
+          authService.clearSession()
+        }
+        if (active) setIsCheckingAuth(false)
+        return
+      }
+
+      try {
+        const latest = await authService.getMe()
+        if (!active) return
+        authService.setSession(latest)
+        router.replace(redirectTo)
+      } catch {
+        authService.clearSession()
+        if (active) setIsCheckingAuth(false)
+      }
+    }
+
+    verifyExistingSession()
+    return () => {
+      active = false
+    }
+  }, [router, redirectTo])
+
   // 1. 실제 이메일 로그인 처리
   const handleSignIn = async (data: { email: string; password: string }) => {
     setIsLoading(true)
@@ -30,9 +64,9 @@ function LoginContent() {
     setErrorMessage(null)
 
     try {
-      const user = await authService.login(data)
-      authService.setSession(user)
-      router.push(redirectTo)
+      const auth = await authService.login(data)
+      authService.setAuthSession(auth)
+      router.replace(redirectTo)
     } catch (err: any) {
       const msg = err.response?.data?.error || err.message || "로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요."
       setErrorMessage(msg)
@@ -49,9 +83,9 @@ function LoginContent() {
     setErrorMessage(null)
 
     try {
-      const user = await authService.signup(data)
-      authService.setSession(user)
-      router.push(redirectTo)
+      const auth = await authService.signup(data)
+      authService.setAuthSession(auth)
+      router.replace(redirectTo)
     } catch (err: any) {
       const msg = err.response?.data?.error || err.message || "회원가입에 실패했습니다. 잠시 후 다시 시도해 주세요."
       setErrorMessage(msg)
@@ -61,26 +95,13 @@ function LoginContent() {
     }
   }
 
-  // SNS 간편 로그인 (OAuth 2.0 공식 연동 전 데모/개발 단계)
+  // SNS 간편 로그인 (OAuth 2.0 공식 연동 준비 중 안내)
   const handleSocialSignIn = (provider: string) => {
-    setIsLoading(true)
-    setLoginMethod(provider)
-    setErrorMessage(null)
+    setErrorMessage(`${provider} 간편 로그인은 OAuth 2.0 연동 준비 중입니다. 이메일 계정을 이용해 주세요.`)
+  }
 
-    // 소셜 로그인 처리 (개발 편의를 위해 임시 계정으로 세션 발급)
-    setTimeout(() => {
-      authService.setSession({
-        id: 999,
-        email: `${provider.toLowerCase()}_user@wandermap.io`,
-        nickname: `${provider} 여행자`,
-        profileImage: generateRandomProfileImage(),
-        bio: "",
-        emailVerified: true,
-        provider: provider.toUpperCase(),
-        createdAt: new Date().toISOString(),
-      })
-      router.push(redirectTo)
-    }, 600)
+  if (isCheckingAuth) {
+    return <GradientBackground className="min-h-screen" />
   }
 
   return (
